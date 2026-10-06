@@ -26,7 +26,7 @@ export const CLASE_HC = { Pendiente: 'hpen', 'En proceso': 'hpro', Completado: '
 export const CLASE_DEP = { 'No requerido': 'dnor', Pendiente: 'dpen', Parcial: 'dpar', Pagado: 'dpag', Reembolsado: 'dree' };
 export const CLASE_ESPERA = { 'En espera': 'hpen', Contactado: 'hpro', Agendado: 'hcom', Descartado: 's-aten' };
 export const CLASE_MENSAJE = { Enviado: 'hpro', Entregado: 'hrev', 'Leído': 'hcom', Error: 'hupd' };
-export const COLOR_HC = { Pendiente: '#D68A1F', 'En proceso': '#3A68C4', Completado: '#2E8B57', Revisado: '#0D5C6B', 'Requiere actualización': '#B23838' };
+export const COLOR_HC = { Pendiente: '#e08a1e', 'En proceso': '#2b5480', Completado: '#1f9e86', Revisado: '#173a5f', 'Requiere actualización': '#d64545' };
 
 /** Convierte Date <-> 'YYYY-MM-DD' para DatePicker. */
 export const dateToISO = (d) => (d instanceof Date && !isNaN(d) ? toISO(d) : null);

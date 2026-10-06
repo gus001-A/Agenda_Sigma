@@ -10,7 +10,6 @@ export const ui = reactive({
     dialogo: null, // nombre del diálogo abierto
     datos: {}, // carga útil del diálogo
     version: 0, // se incrementa para pedir al panel que recargue
-    sideAbierto: false,
 
     abrirCita(id) { this.cita = id; this.version++; },
     cerrarCita() { this.cita = null; },

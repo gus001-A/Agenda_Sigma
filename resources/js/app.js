@@ -38,16 +38,19 @@ import Message from 'primevue/message';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 
-// Paleta del prototipo: verde azulado institucional (#0D5C6B) y ámbar de acento.
+// Paleta de SIGAM: azul marino #173a5f (primario) + verde azulado #1f9e86 (acento). Solo tema claro.
 const Sigma24 = definePreset(Aura, {
     semantic: {
         primary: {
-            50: '#ecf7f9', 100: '#d6eff2', 200: '#b0e0e7', 300: '#7fcbd7', 400: '#45b3c5',
-            500: '#0d5c6b', 600: '#09495a', 700: '#083c4a', 800: '#072f3a', 900: '#05242c', 950: '#031418',
+            50: '#eaf0f6', 100: '#dae5f0', 200: '#b6c9dd', 300: '#87a5c4', 400: '#4f77a0',
+            500: '#173a5f', 600: '#0f2c4a', 700: '#0c243d', 800: '#091c30', 900: '#061424', 950: '#030b14',
         },
         colorScheme: {
-            light: { primary: { color: '{primary.500}', hoverColor: '{primary.600}', activeColor: '{primary.700}' } },
-            dark: { primary: { color: '{primary.400}', contrastColor: '#06252c', hoverColor: '{primary.300}', activeColor: '{primary.200}' } },
+            light: {
+                primary: { color: '{primary.500}', contrastColor: '#ffffff', hoverColor: '{primary.600}', activeColor: '{primary.700}' },
+                highlight: { background: 'rgba(23, 58, 95, 0.10)', focusBackground: 'rgba(23, 58, 95, 0.16)', color: '#173a5f', focusColor: '#173a5f' },
+                formField: { borderColor: '#d9dfe7', hoverBorderColor: '#173a5f', focusBorderColor: '#173a5f', placeholderColor: '#94a3b8' },
+            },
         },
     },
 });
@@ -72,7 +75,7 @@ createInertiaApp({
         const app = createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
-            .use(PrimeVue, { theme: { preset: Sigma24, options: { darkModeSelector: '.app-dark', cssLayer: false } }, locale: localeEs })
+            .use(PrimeVue, { theme: { preset: Sigma24, options: { darkModeSelector: false, cssLayer: false } }, locale: localeEs })
             .use(ToastService)
             .use(ConfirmationService)
             .directive('tooltip', Tooltip);
@@ -81,5 +84,5 @@ createInertiaApp({
         Object.entries(comps).forEach(([n, c]) => app.component(n, c));
         return app.mount(el);
     },
-    progress: { color: '#E9A23B' },
+    progress: { color: '#1f9e86' },
 });

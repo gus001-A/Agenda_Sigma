@@ -1,9 +1,10 @@
 <script setup>
-import { computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import { avisos, avisar } from '@/lib/api';
 import { ui, usePermisos } from '@/lib/ui';
 import { initials } from '@/lib/util';
@@ -21,19 +22,34 @@ import Historia from '@/Components/Dialogos/Historia.vue';
 import Liberado from '@/Components/Dialogos/Liberado.vue';
 import NuevaEspera from '@/Components/Dialogos/NuevaEspera.vue';
 
-const props = defineProps({ titulo: String, subtitulo: String });
+defineProps({ titulo: String, subtitulo: String });
 const page = usePage();
 const toast = useToast();
+const confirm = useConfirm();
 const { puede } = usePermisos();
 const user = computed(() => page.props.auth.user);
-const menu = computed(() => page.props.menu || []);
 const cnt = computed(() => page.props.contadores || {});
 const actual = computed(() => page.url.split('?')[0].replace(/^\//, ''));
+
+// Menú lateral agrupado. Solo se muestran los módulos permitidos para el rol.
+const GRUPOS = [
+    { k: 'g-operacion', l: 'Operación', mods: ['panel', 'agenda', 'recepcion', 'disponibilidad', 'espera', 'espacios', 'anticipos', 'notificaciones'] },
+    { k: 'g-clinico', l: 'Clínico', mods: ['historias', 'preconsulta'] },
+    { k: 'g-admin', l: 'Administración', mods: ['formatos', 'catalogos', 'reportes', 'usuarios', 'auditoria'] },
+];
 const grupos = computed(() => {
-    const g = [];
-    menu.value.forEach((m) => { let x = g.find((y) => y.n === m.g); if (!x) g.push((x = { n: m.g, items: [] })); x.items.push(m); });
-    return g;
+    const permitidos = Object.fromEntries((page.props.menu || []).map((m) => [m.k, m]));
+    return GRUPOS.map((g) => {
+        const items = g.mods.filter((k) => permitidos[k]).map((k) => permitidos[k]);
+        return { ...g, items };
+    }).filter((g) => g.items.length);
 });
+
+// Menú de usuario
+const abierto = ref(null);
+const alternar = (k) => { abierto.value = abierto.value === k ? null : k; };
+const cerrarMenus = (e) => { if (!e.target.closest('.side-user')) abierto.value = null; };
+const lateral = ref(false); // menú lateral abierto en pantallas chicas
 
 // Avisos (toasts) de la app y mensajes flash del servidor.
 watch(() => avisos.lista.length, () => {
@@ -41,63 +57,75 @@ watch(() => avisos.lista.length, () => {
 });
 watch(() => page.props.flash, (f) => { if (f?.success) avisar(f.success); if (f?.error) avisar(f.error, 'error'); }, { immediate: true, deep: true });
 
-function tema() {
-    const r = document.documentElement;
-    r.classList.toggle('app-dark');
-    try { localStorage.setItem('sigma24-tema', r.classList.contains('app-dark') ? 'oscuro' : 'claro'); } catch (e) {}
+function salir() {
+    abierto.value = null;
+    confirm.require({
+        header: 'Cerrar sesión', message: '¿Seguro que quieres salir? Tendrás que iniciar sesión de nuevo para continuar.',
+        acceptLabel: 'Cerrar sesión', rejectLabel: 'Cancelar', acceptProps: { severity: 'danger' }, rejectProps: { severity: 'secondary', outlined: true },
+        accept: () => router.post(route('logout')),
+    });
 }
-function salir() { router.post(route('logout')); }
 
-// La agenda, el panel y recepción se actualizan solos cada minuto.
+// La agenda, el panel, recepción y espacios se actualizan solos cada minuto.
 let reloj = null;
 onMounted(() => {
+    document.addEventListener('click', cerrarMenus);
     reloj = setInterval(() => {
         if (['agenda', 'panel', 'recepcion', 'espacios'].includes(actual.value) && !ui.dialogo && !document.hidden) router.reload({ preserveScroll: true, preserveState: true });
     }, 60000);
 });
-const quitarEscucha = router.on('navigate', () => { ui.sideAbierto = false; });
-onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); });
+const quitarEscucha = router.on('navigate', () => { abierto.value = null; lateral.value = false; });
+onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEventListener('click', cerrarMenus); });
 </script>
 
 <template>
     <Head :title="titulo" />
     <div class="app">
-        <aside class="side" :class="{ open: ui.sideAbierto }">
-            <div class="brand">
+        <aside class="side" :class="{ open: lateral }">
+            <Link :href="route('inicio')" class="brand">
                 <div class="mark">S24</div>
                 <div><b>SIGMA24</b><small>{{ page.props.app.clinica }}</small></div>
-            </div>
+            </Link>
             <nav class="nav" aria-label="Módulos">
-                <template v-for="g in grupos" :key="g.n">
-                    <div class="g">{{ g.n }}</div>
+                <template v-for="g in grupos" :key="g.k">
+                    <div class="g">{{ g.l }}</div>
                     <Link v-for="m in g.items" :key="m.k" :href="route(m.ruta)" :class="{ on: actual === m.ruta }">
-                        <i :class="m.i" /><span>{{ m.l }}</span>
-                        <span v-if="cnt[m.k]" class="cnt">{{ cnt[m.k] }}</span>
+                        <i :class="m.i" /><span>{{ m.l }}</span><span v-if="cnt[m.k]" class="cnt">{{ cnt[m.k] }}</span>
                     </Link>
                 </template>
             </nav>
-            <div class="who">
-                <div class="small" style="color: var(--side-muted)">Sesión: {{ user.role }}</div>
-                <div class="row" style="gap: 6px">
-                    <button type="button" @click="tema"><i class="pi pi-moon" /> Tema</button>
-                    <button type="button" @click="salir"><i class="pi pi-sign-out" /> Salir</button>
+            <div class="side-user">
+                <div v-if="abierto === 'user'" class="menu-pop">
+                    <div class="info">{{ user.email }}</div>
+                    <Link v-if="user.modulos.includes('auditoria')" :href="route('auditoria')"><i class="pi pi-shield" />Auditoría</Link>
+                    <button type="button" class="salir" @click="salir"><i class="pi pi-sign-out" />Cerrar sesión</button>
                 </div>
+                <button type="button" :aria-expanded="abierto === 'user'" @click="alternar('user')">
+                    <div class="avatar">{{ initials(user.name) }}</div>
+                    <span class="nombre">{{ user.name }}<small>{{ user.role }}</small></span>
+                    <i class="pi pi-ellipsis-v" style="font-size: 12px; color: #94a3b8" />
+                </button>
             </div>
         </aside>
-        <div v-if="ui.sideAbierto" class="scrim" @click="ui.sideAbierto = false" />
+        <div v-if="lateral" class="scrim" @click="lateral = false" />
+
         <div class="main">
-            <header class="top">
-                <Button class="menu-btn" icon="pi pi-bars" text rounded aria-label="Menú" @click="ui.sideAbierto = !ui.sideAbierto" />
-                <div class="ttl"><h1>{{ titulo }}</h1><small>{{ subtitulo }}</small></div>
-                <div class="sp" />
-                <slot name="acciones" />
-                <Button v-if="puede('cita')" label="Nueva cita" icon="pi pi-plus" @click="ui.abrir('nuevaCita', {})" />
-                <div class="user">
-                    <div class="avatar">{{ initials(user.name) }}</div>
-                    <span><b style="font-weight: 500">{{ user.name }}</b><br /><small class="muted">{{ user.role }}</small></span>
+            <main class="contenido">
+                <div class="page-head">
+                    <div class="row" style="flex-wrap: nowrap; min-width: 0; align-items: flex-start">
+                        <Button class="burger" icon="pi pi-bars" text rounded aria-label="Abrir menú" @click="lateral = true" />
+                        <div style="min-width: 0">
+                            <h1 class="page-title">{{ titulo }}</h1>
+                            <p v-if="subtitulo" class="page-desc">{{ subtitulo }}</p>
+                        </div>
+                    </div>
+                    <div class="page-acts">
+                        <slot name="acciones" />
+                        <Button v-if="puede('cita')" label="Nueva cita" icon="pi pi-plus" @click="ui.abrir('nuevaCita', {})" />
+                    </div>
                 </div>
-            </header>
-            <section class="view"><slot /></section>
+                <section class="view"><slot /></section>
+            </main>
         </div>
     </div>
 
