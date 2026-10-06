@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -107,25 +108,34 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
             </div>
         </div>
 
-        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Se valida disponibilidad, horario, bloqueos y agenda del médico" v-model:visible="dlg" :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" ancho="820px">
-            <div class="grid2">
-                <div class="field"><label>Paciente</label><PacienteBuscador v-model="paciente" opcional :permitir-alta="false" /></div>
-                <div class="stack" style="align-content: start">
-                    <div class="field"><label>Médico</label><Select v-model="r.doctor_id" :options="medicos" option-label="name" option-value="id" filter /></div>
-                    <div class="field"><label for="rv-pr">Procedimiento o actividad</label><InputText id="rv-pr" v-model="r.procedure" placeholder="Ej. artroscopia de rodilla" /></div>
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Se valida disponibilidad, horario, bloqueos y agenda del médico" v-model:visible="dlg" :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" ancho="1000px">
+            <div class="nc-grid">
+                <div class="nc-col">
+                    <SeccionModal paso="1" titulo="Espacio y horario" icono="pi pi-building" color="#6b4bc9">
+                        <div class="grid2">
+                            <div class="field"><label>Recurso</label><Select v-model="r.resource_id" :options="page.props.opciones.recursos" option-label="name" option-value="id" fluid /></div>
+                            <div class="field"><label>Fecha</label><Fecha v-model="r.date" /></div>
+                        </div>
+                        <div class="grid2">
+                            <div class="field"><label>Hora de inicio</label><Hora v-model="r.start_time" :step="900" /></div>
+                            <div class="field"><label>Duración</label><InputNumber v-model="r.duration" :min="15" :step="15" show-buttons suffix=" min" fluid /></div>
+                        </div>
+                    </SeccionModal>
+                    <SeccionModal paso="2" titulo="Procedimiento" icono="pi pi-briefcase" color="#d64545">
+                        <div class="field"><label for="rv-pr">Procedimiento o actividad</label><div class="campo-ic"><i class="pi pi-tag" /><InputText id="rv-pr" v-model="r.procedure" placeholder="Ej. artroscopia de rodilla" fluid /></div></div>
+                        <div class="field"><label>Médico</label><Select v-model="r.doctor_id" :options="medicos" option-label="name" option-value="id" filter fluid /></div>
+                        <div class="field"><label for="rv-n">Notas</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText id="rv-n" v-model="r.notes" placeholder="Opcional" fluid /></div></div>
+                    </SeccionModal>
                 </div>
-            </div>
-            <div class="grid4">
-                <div class="field"><label>Recurso</label><Select v-model="r.resource_id" :options="page.props.opciones.recursos" option-label="name" option-value="id" /></div>
-                <div class="field"><label>Fecha</label><Fecha v-model="r.date" /></div>
-                <div class="field"><label>Hora</label><Hora v-model="r.start_time" :step="900" /></div>
-                <div class="field"><label>Duración (min)</label><InputNumber v-model="r.duration" :min="15" :step="15" show-buttons fluid /></div>
-            </div>
-            <div class="field"><label for="rv-n">Notas</label><InputText id="rv-n" v-model="r.notes" /></div>
-            <div>
-                <div class="sec-t">Validación</div>
-                <div class="checks">
-                    <div v-for="(c, i) in checks" :key="i" :class="c.ok ? 'y' : 'x'"><i class="pi" :class="c.ok ? 'pi-check' : 'pi-times'" /><span>{{ c.t }}</span></div>
+                <div class="nc-col">
+                    <SeccionModal paso="3" titulo="Paciente" icono="pi pi-user" color="#2b5480" ayuda="Opcional para eventos internos">
+                        <PacienteBuscador v-model="paciente" opcional :permitir-alta="false" />
+                    </SeccionModal>
+                    <div class="resumen-cita">
+                        <h4><i class="pi pi-shield" /> Validación automática</h4>
+                        <div v-for="(c, i) in checks" :key="i" class="rc-row"><i class="pi" :class="c.ok ? 'pi-check' : 'pi-times'" :style="{ background: c.ok ? 'rgba(31,158,134,.45)' : 'rgba(214,69,69,.55)' }" /><span style="color: #fff">{{ c.t }}</span></div>
+                        <div v-if="!checks.length" class="rc-nota"><i class="pi pi-info-circle" /><span>Completa el espacio y el horario para validar.</span></div>
+                    </div>
                 </div>
             </div>
             <template #footer>
@@ -134,21 +144,22 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
             </template>
         </Modal>
 
-        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Reservación de espacio" :visible="!!ver" :header="ver?.procedure" ancho="520px" @update:visible="ver = null">
-            <dl v-if="ver" class="kv">
-                <dt>Recurso</dt><dd>{{ ver.resource.name }}, {{ ver.resource.location }}</dd>
-                <dt>Fecha</dt><dd>{{ fmtDL(ver.date_s) }}</dd>
-                <dt>Horario</dt><dd>{{ ver.start_time }} a {{ ver.end_time }} ({{ ver.duration }} min)</dd>
-                <dt>Médico</dt><dd>{{ ver.doctor?.name || '—' }}</dd>
-                <dt>Paciente</dt><dd>{{ ver.patient?.name || '—' }}</dd>
-                <template v-if="ver.resource.cost"><dt>Costo del recurso</dt><dd>{{ money(ver.resource.cost) }}</dd></template>
-                <template v-if="ver.notes"><dt>Notas</dt><dd>{{ ver.notes }}</dd></template>
-                <dt>Registró</dt><dd>{{ ver.created_by }}</dd>
-            </dl>
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Reservación de espacio" :visible="!!ver" :header="ver?.procedure" ancho="600px" @update:visible="ver = null">
+            <SeccionModal v-if="ver" :titulo="ver.resource.name" icono="pi pi-building" color="#6b4bc9" :ayuda="ver.resource.location">
+                <dl class="kv" style="margin: 0">
+                    <dt>Fecha</dt><dd>{{ fmtDL(ver.date_s) }}</dd>
+                    <dt>Horario</dt><dd><b>{{ ver.start_time }} a {{ ver.end_time }}</b> ({{ ver.duration }} min)</dd>
+                    <dt>Médico</dt><dd>{{ ver.doctor?.name || '—' }}</dd>
+                    <dt>Paciente</dt><dd>{{ ver.patient?.name || '—' }}</dd>
+                    <template v-if="ver.resource.cost"><dt>Costo del recurso</dt><dd>{{ money(ver.resource.cost) }}</dd></template>
+                    <template v-if="ver.notes"><dt>Notas</dt><dd>{{ ver.notes }}</dd></template>
+                    <dt>Registró</dt><dd>{{ ver.created_by }}</dd>
+                </dl>
+            </SeccionModal>
             <template #footer>
                 <template v-if="puede('espacio')">
-                    <Button label="Cancelar reservación" severity="danger" outlined @click="cancelar" />
-                    <Button label="Editar" severity="secondary" outlined @click="editar(ver.id)" />
+                    <Button label="Cancelar reservación" icon="pi pi-times" severity="danger" outlined @click="cancelar" />
+                    <Button label="Editar" icon="pi pi-pencil" @click="editar(ver.id)" />
                 </template>
                 <Button v-else label="Cerrar" severity="secondary" outlined @click="ver = null" />
             </template>

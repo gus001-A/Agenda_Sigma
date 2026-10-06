@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -19,8 +20,9 @@ async function quitar() {
 </script>
 
 <template>
-    <Modal icono="pi pi-lock" color="#64748b" v-model:visible="visible" header="Bloqueo de agenda" ancho="520px">
-        <dl v-if="b" class="kv">
+    <Modal icono="pi pi-lock" color="#64748b" v-model:visible="visible" header="Bloqueo de agenda" :subtitulo="b ? b.target : ''" ancho="560px">
+        <SeccionModal v-if="b" :titulo="b.type" icono="pi pi-ban" color="#64748b" ayuda="Detalle del bloqueo">
+        <dl class="kv" style="margin: 0">
             <dt>Tipo</dt><dd><b style="font-weight: 500">{{ b.type }}</b></dd>
             <dt>Aplica a</dt><dd>{{ b.target }}</dd>
             <dt>Fecha</dt><dd>{{ b.recurring ? `Cada ${b.days.map((x) => DIAS[x].toLowerCase()).join(', ')} desde ${fmtDS(b.date)}${b.until ? ' hasta ' + fmtDS(b.until) : ''}` : fmtDL(b.date) }}</dd>
@@ -28,6 +30,7 @@ async function quitar() {
             <template v-if="b.notes"><dt>Observaciones</dt><dd>{{ b.notes }}</dd></template>
             <dt>Creado por</dt><dd>{{ b.created_by }}, {{ fmtStamp(b.created_at) }}</dd>
         </dl>
+        </SeccionModal>
         <template #footer>
             <Button v-if="puede('bloqueo') && b" label="Quitar bloqueo" icon="pi pi-trash" severity="danger" outlined @click="quitar" />
             <Button label="Cerrar" severity="secondary" outlined @click="ui.cerrar()" />

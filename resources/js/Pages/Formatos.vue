@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -165,28 +166,34 @@ async function crear() {
             </div>
         </div>
 
-        <Modal icono="pi pi-upload" color="#7c3aed" subtitulo="Las historias contestadas conservan su versión" :visible="!!pub" header="Publicar nueva versión" ancho="520px" @update:visible="pub = null">
+        <Modal icono="pi pi-upload" color="#7c3aed" subtitulo="Las historias contestadas conservan su versión" :visible="!!pub" header="Publicar nueva versión" ancho="620px" @update:visible="pub = null">
             <template v-if="pub">
-                <p>Las citas nuevas usarán esta versión. Las {{ formato.usos }} historias ya respondidas conservarán su versión original.</p>
-                <div class="pills">
-                    <label><input type="radio" :checked="!pub.mayor" @change="pub.mayor = false" />Cambio menor: v{{ versionSig(false) }}</label>
-                    <label><input type="radio" :checked="pub.mayor" @change="pub.mayor = true" />Cambio mayor: v{{ versionSig(true) }}</label>
-                </div>
-                <div class="field"><label for="pv-n">Descripción de los cambios</label><InputText id="pv-n" v-model="pub.notes" placeholder="Ej. se agregó pregunta sobre actividad física" /></div>
+                <div class="note"><i class="pi pi-info-circle" /> Las citas nuevas usarán esta versión. Las <b>{{ formato.usos }}</b> historias ya respondidas conservarán su versión original.</div>
+                <SeccionModal titulo="Tipo de cambio" icono="pi pi-tags" color="#7c3aed">
+                    <div class="opciones-ic" style="grid-template-columns: 1fr 1fr">
+                        <button type="button" class="op-ic" :class="{ on: !pub.mayor }" style="--oc: #1f9e86" @click="pub.mayor = false"><i class="pi pi-angle-up" />Menor · v{{ versionSig(false) }}</button>
+                        <button type="button" class="op-ic" :class="{ on: pub.mayor }" style="--oc: #7c3aed" @click="pub.mayor = true"><i class="pi pi-angle-double-up" />Mayor · v{{ versionSig(true) }}</button>
+                    </div>
+                    <div class="field"><label for="pv-n">Descripción de los cambios</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText id="pv-n" v-model="pub.notes" placeholder="Ej. se agregó pregunta sobre actividad física" fluid /></div></div>
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="pub = null" /><Button label="Publicar" @click="publicar" /></template>
+            <template #footer><Button label="Cancelar" text @click="pub = null" /><Button label="Publicar versión" icon="pi pi-upload" @click="publicar" /></template>
         </Modal>
 
-        <Modal icono="pi pi-sliders-h" color="#7c3aed" subtitulo="Después podrás ajustar secciones y campos" :visible="!!nuevo" header="Nuevo formato clínico" ancho="560px" @update:visible="nuevo = null">
+        <Modal icono="pi pi-sliders-h" color="#7c3aed" subtitulo="Después podrás ajustar secciones y campos" :visible="!!nuevo" header="Nuevo formato clínico" ancho="660px" @update:visible="nuevo = null">
             <template v-if="nuevo">
-                <div class="field"><label for="nf-n">Nombre</label><InputText id="nf-n" v-model="nuevo.name" placeholder="Ej. Historia clínica de Cardiología" /></div>
-                <div class="grid2">
-                    <div class="field"><label>Especialidad</label><Select v-model="nuevo.specialty_id" :options="page.props.opciones.especialidades" option-label="name" option-value="id" placeholder="Todas (general)" show-clear /></div>
-                    <div class="field"><label>Tipo de consulta</label><Select v-model="nuevo.consult_type" :options="cat.tiposConsulta" /></div>
-                </div>
-                <label class="chk"><Checkbox v-model="nuevo.plantilla" binary />Partir de la plantilla general (datos, motivo, antecedentes, medicamentos, alergias, estudios y consentimiento)</label>
+                <SeccionModal titulo="Datos del formato" icono="pi pi-file-edit" color="#7c3aed">
+                    <div class="field"><label for="nf-n">Nombre</label><div class="campo-ic"><i class="pi pi-tag" /><InputText id="nf-n" v-model="nuevo.name" placeholder="Ej. Historia clínica de Cardiología" fluid /></div></div>
+                    <div class="grid2">
+                        <div class="field"><label>Especialidad</label><Select v-model="nuevo.specialty_id" :options="page.props.opciones.especialidades" option-label="name" option-value="id" placeholder="Todas (general)" show-clear fluid /></div>
+                        <div class="field"><label>Tipo de consulta</label><Select v-model="nuevo.consult_type" :options="cat.tiposConsulta" fluid /></div>
+                    </div>
+                </SeccionModal>
+                <SeccionModal titulo="Punto de partida" icono="pi pi-copy" color="#1f9e86">
+                    <label class="chk"><ToggleSwitch v-model="nuevo.plantilla" />Partir de la plantilla general (datos, motivo, antecedentes, medicamentos, alergias, estudios y consentimiento)</label>
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="nuevo = null" /><Button label="Crear formato" @click="crear" /></template>
+            <template #footer><Button label="Cancelar" text @click="nuevo = null" /><Button label="Crear formato" icon="pi pi-check" @click="crear" /></template>
         </Modal>
     </AppLayout>
 </template>

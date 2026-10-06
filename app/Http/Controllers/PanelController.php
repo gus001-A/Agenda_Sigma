@@ -38,7 +38,7 @@ class PanelController extends Controller
         $occQ = $quirofanos->filter(fn ($r) => $resHoy->contains(fn ($x) => $x->resource_id === $r->id
             && Agenda::min($x->start_time) <= $nm && $nm < Agenda::min($x->start_time) + $x->duration))->count();
 
-        $proximas = $act->filter(fn ($a) => $a->status !== 'Atendida' && Agenda::min($a->time) + 30 >= $nm)->sortBy('time')->take(7)
+        $proximas = $act->filter(fn ($a) => $a->status !== 'Atendida' && Agenda::min($a->time) + 30 >= $nm)->sortBy('time')->take(15)
             ->map(fn ($a) => Presentador::cita($a))->values();
 
         $hoyMedicos = $medicos->filter(fn ($d) => $d->worksOn($hoy))->sortBy('name');

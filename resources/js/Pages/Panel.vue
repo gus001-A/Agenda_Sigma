@@ -44,7 +44,7 @@ const ocupacion = computed(() => ({
             <div class="card col">
                 <header>
                     <span class="hic" style="--c: #1f9e86"><i class="pi pi-clock" /></span><h2>Próximas citas de hoy</h2>
-                    <Link :href="route('recepcion')"><Button label="Ver todas" icon="pi pi-arrow-right" icon-pos="right" size="small" severity="secondary" outlined /></Link>
+                    <Link :href="route('recepcion')" class="btn-card" style="--bc: #1f9e86">Ver todas <i class="pi pi-arrow-right" /></Link>
                 </header>
                 <div class="scroll-y" style="flex: 1">
                     <div v-for="a in proximas" :key="a.id" class="list-item" @click="ui.abrirCita(a.id)">
@@ -76,7 +76,7 @@ const ocupacion = computed(() => ({
                     </div>
                 </div>
                 <div class="card">
-                    <header><span class="hic" style="--c: #e08a1e"><i class="pi pi-list" /></span><h3>Lista de espera</h3><Link :href="route('espera')"><Button label="Gestionar" size="small" severity="secondary" outlined /></Link></header>
+                    <header><span class="hic" style="--c: #e08a1e"><i class="pi pi-list" /></span><h3>Lista de espera</h3><Link :href="route('espera')" class="btn-card" style="--bc: #e08a1e">Gestionar <i class="pi pi-arrow-right" /></Link></header>
                     <div class="body small">
                         <div v-for="(w, i) in espera" :key="i" class="row" style="justify-content: space-between; padding: 5px 0; flex-wrap: nowrap">
                             <span class="row" style="gap: 8px; flex-wrap: nowrap; min-width: 0"><span class="dot" :style="{ '--sf': COL_PRIO[w.priority] }" />{{ w.patient }}</span>

@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -23,12 +24,16 @@ async function guardar() {
 </script>
 
 <template>
-    <Modal icono="pi pi-check-circle" color="#16a34a" subtitulo="La nota se vincula al expediente del paciente" v-model:visible="visible" header="Finalizar atención" ancho="560px">
-        <div class="field"><label for="att">Nota de atención (se vincula al expediente)</label><Textarea id="att" v-model="f.note" rows="4" placeholder="Diagnóstico, plan, indicaciones" /></div>
-        <label class="chk"><Checkbox v-model="f.followup" binary />Programar consulta de seguimiento</label>
+    <Modal v-model:visible="visible" titulo="Finalizar atención" :subtitulo="a.patient ? `${a.patient} · la nota se vincula al expediente` : ''" icono="pi pi-check-circle" color="#16a34a" ancho="640px">
+        <SeccionModal titulo="Nota de atención" icono="pi pi-file-edit" color="#16a34a" ayuda="Diagnóstico, plan e indicaciones">
+            <Textarea v-model="f.note" rows="6" auto-resize placeholder="Escribe la nota de la consulta…" fluid />
+        </SeccionModal>
+        <SeccionModal titulo="Seguimiento" icono="pi pi-calendar-plus" color="#2b5480">
+            <label class="chk"><ToggleSwitch v-model="f.followup" />Programar consulta de seguimiento (se propone el primer espacio libre en 7 días)</label>
+        </SeccionModal>
         <template #footer>
             <Button label="Cancelar" text @click="ui.cerrar()" />
-            <Button label="Finalizar atención" icon="pi pi-check" :loading="guardando" @click="guardar" />
+            <Button label="Finalizar atención" icon="pi pi-check" severity="success" :loading="guardando" @click="guardar" />
         </template>
     </Modal>
 </template>

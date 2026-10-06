@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -24,12 +25,16 @@ async function guardar() {
 </script>
 
 <template>
-    <Modal icono="pi pi-replay" color="#8e3b69" subtitulo="Queda registrado en el historial de la cita" v-model:visible="visible" header="Reembolsar anticipo" ancho="500px">
-        <p>Se registrará el reembolso de {{ money(a.paid) }} a {{ a.patient }}.</p>
-        <div class="field"><label for="rf-n">Motivo</label><InputText id="rf-n" v-model="motivo" /></div>
+    <Modal v-model:visible="visible" titulo="Reembolsar anticipo" :subtitulo="a.patient" icono="pi pi-replay" color="#8e3b69" ancho="540px">
+        <div class="kpis linea" style="margin: 0">
+            <div class="kpi" style="--acc: #8e3b69"><span class="kpi-ic"><i class="pi pi-replay" /></span><div><span>Monto a reembolsar</span><b>{{ money(a.paid) }}</b></div></div>
+        </div>
+        <SeccionModal titulo="Motivo del reembolso" icono="pi pi-comment" color="#8e3b69" ayuda="Queda registrado en el historial de la cita y en auditoría">
+            <div class="campo-ic"><i class="pi pi-pencil" /><InputText v-model="motivo" fluid /></div>
+        </SeccionModal>
         <template #footer>
             <Button label="Cancelar" text @click="ui.cerrar()" />
-            <Button label="Registrar reembolso" :loading="guardando" @click="guardar" />
+            <Button label="Registrar reembolso" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
     </Modal>
 </template>

@@ -612,3 +612,75 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .p-button.p-button-success:not(.p-button-outlined):not(.p-button-text):hover { background: #15803d; border-color: #15803d; }
 .p-selectbutton .p-togglebutton-content { white-space: nowrap; }
 .p-dialog.modal-pro .p-selectbutton .p-togglebutton-content { padding: 7px 12px; }
+
+/* ============================================================ Secciones dentro de los modales */
+.msec { --sc: #173a5f; border: 1px solid #e6ecf3; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(17,34,51,.04), 0 8px 22px -18px rgba(17,34,51,.3); overflow: hidden; }
+.msec-h { display: flex; align-items: center; gap: 11px; padding: 11px 14px; background: linear-gradient(90deg, color-mix(in srgb, var(--sc) 7%, #fff), #fff 70%); border-bottom: 1px solid #eef2f6; }
+.msec-ic { width: 32px; height: 32px; flex: none; border-radius: 10px; display: grid; place-items: center; font-size: 14px; color: #fff;
+  background: linear-gradient(135deg, var(--sc), color-mix(in srgb, var(--sc) 60%, #0b1426)); box-shadow: 0 6px 14px -8px var(--sc); }
+.msec-ic .pi { vertical-align: 0; }
+.msec-t { flex: 1; min-width: 0; }
+.msec-t b { display: flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 800; color: #0b1426; }
+.msec-t small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+.msec-paso { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10.5px; font-weight: 800; color: var(--sc); background: color-mix(in srgb, var(--sc) 14%, #fff); }
+.msec-x { flex: none; display: flex; gap: 6px; align-items: center; }
+.msec-b { padding: 14px; display: grid; gap: 14px; }
+.p-dialog.modal-pro .p-dialog-content { background: linear-gradient(180deg, #f6f9fc, #f9fbfd 40%, #fff); }
+
+/* Campos con icono a la izquierda */
+.campo-ic { position: relative; }
+.campo-ic > .pi { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px; z-index: 1; pointer-events: none; }
+.campo-ic > .p-inputtext, .campo-ic > .p-inputnumber .p-inputtext { padding-left: 34px !important; }
+.campo-ic > .p-select .p-select-label { padding-left: 34px; }
+
+/* Botones-opción con icono (canal, forma de pago, tipo de consulta) */
+.opciones-ic { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.op-ic { --oc: #173a5f; all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 11px; border: 1px solid #e2e8f0;
+  background: #fff; font-size: 12.5px; font-weight: 600; color: #42566b; transition: border-color .15s, background .15s, color .15s, box-shadow .15s; }
+.op-ic > .pi { width: 26px; height: 26px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 12px; color: var(--oc); background: color-mix(in srgb, var(--oc) 11%, #fff); vertical-align: 0; }
+.op-ic:hover { border-color: color-mix(in srgb, var(--oc) 45%, #fff); color: var(--oc); }
+.op-ic.on { border-color: var(--oc); background: color-mix(in srgb, var(--oc) 8%, #fff); color: var(--oc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--oc) 14%, transparent); }
+.op-ic.on > .pi { background: var(--oc); color: #fff; }
+
+/* Selector de horarios agrupado por turno */
+.turnos { display: grid; gap: 10px; }
+.turno-t { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+.turno-t .pi { color: #e08a1e; font-size: 12px; vertical-align: 0; }
+.slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 6px; }
+.slots-grid button { all: unset; box-sizing: border-box; cursor: pointer; text-align: center; padding: 7px 0; border-radius: 9px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: #16806c; background: #e6f5f1; border: 1px solid #c7e9e0; transition: background .15s, color .15s, transform .12s, box-shadow .15s; }
+.slots-grid button:hover { background: #d3efe7; transform: translateY(-1px); }
+.slots-grid button.on { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 8px 16px -8px rgba(23, 58, 95, .6); }
+
+/* Resumen de la cita (tarjeta oscura) */
+.resumen-cita { border-radius: 16px; padding: 16px; color: #fff; background: linear-gradient(150deg, #0f2c4a, #173a5f 50%, #16806c); box-shadow: 0 16px 30px -18px rgba(15, 44, 74, .8); position: relative; overflow: hidden; }
+.resumen-cita::after { content: ""; position: absolute; right: -40px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.07); pointer-events: none; }
+.resumen-cita h4 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 800; margin-bottom: 10px; }
+.resumen-cita .rc-row { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.15); font-size: 13px; }
+.resumen-cita .rc-row:last-of-type { border-bottom: 0; }
+.resumen-cita .rc-row .pi { width: 26px; height: 26px; flex: none; border-radius: 8px; display: grid; place-items: center; background: rgba(255,255,255,.12); font-size: 12px; vertical-align: 0; }
+.resumen-cita .rc-row span { flex: 1; min-width: 0; color: rgba(255,255,255,.75); }
+.resumen-cita .rc-row b { font-weight: 700; text-align: right; }
+.resumen-cita .rc-vacio { color: rgba(255,255,255,.45); font-weight: 500; }
+.resumen-cita .rc-total { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.1); display: flex; justify-content: space-between; align-items: baseline; }
+.resumen-cita .rc-total b { font-size: 20px; }
+.resumen-cita .rc-nota { margin-top: 10px; font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,.8); display: flex; gap: 8px; }
+.nc-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.nc-col { display: grid; gap: 16px; }
+@media (max-width: 900px) { .nc-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================ Botones destacados */
+.btn-cta.p-button { position: relative; overflow: hidden; padding: 7px 18px 7px 7px !important; border-radius: 14px !important; font-weight: 800 !important; letter-spacing: .01em;
+  background: linear-gradient(120deg, #173a5f 0%, #1c6b78 55%, #1f9e86 100%) !important; background-size: 170% 170% !important; animation: s-grad 7s ease infinite;
+  box-shadow: 0 12px 26px -12px rgba(23, 58, 95, .75), inset 0 1px 0 rgba(255,255,255,.2) !important; gap: 10px; }
+.btn-cta.p-button .p-button-icon { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.18); font-size: 13px; margin: 0; }
+.btn-cta.p-button::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.28), transparent); transform: skewX(-20deg); transition: left .6s ease; }
+.btn-cta.p-button:hover::after { left: 120%; }
+.btn-cta.p-button:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -12px rgba(23, 58, 95, .8) !important; }
+
+.btn-card { --bc: #173a5f; all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; padding: 5px 6px 5px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; color: var(--bc); background: color-mix(in srgb, var(--bc) 8%, #fff); border: 1px solid color-mix(in srgb, var(--bc) 18%, #fff);
+  transition: background .15s, color .15s, box-shadow .15s; white-space: nowrap; }
+.btn-card .pi { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; background: var(--bc); color: #fff; transition: transform .2s; vertical-align: 0; }
+.btn-card:hover { background: var(--bc); color: #fff; box-shadow: 0 8px 16px -10px var(--bc); }
+.btn-card:hover .pi { background: rgba(255,255,255,.22); transform: translateX(2px); }

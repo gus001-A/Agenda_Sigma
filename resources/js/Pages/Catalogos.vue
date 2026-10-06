@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -185,103 +186,140 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
         </TablaDatos>
 
         <!-- Diálogos -->
-        <Modal icono="pi pi-bookmark" color="#0891b2" subtitulo="Costo base y formatos clínicos asociados" :visible="!!esp" :header="esp?.id ? 'Editar especialidad' : 'Nueva especialidad'" ancho="600px" @update:visible="esp = null">
+        <Modal icono="pi pi-bookmark" color="#0891b2" subtitulo="Costo base y formatos clínicos asociados" :visible="!!esp" :header="esp?.id ? 'Editar especialidad' : 'Nueva especialidad'" ancho="680px" @update:visible="esp = null">
             <template v-if="esp">
-                <div class="grid2">
-                    <div class="field"><label>Nombre</label><InputText v-model="esp.name" /></div>
-                    <div class="field"><label>Costo predeterminado</label><InputNumber v-model="esp.default_cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
-                </div>
-                <div class="field"><label>Descripción</label><InputText v-model="esp.description" /></div>
-                <div class="grid2">
-                    <div class="field"><label>Formato de primera consulta</label><Select v-model="esp.first_form_id" :options="formatos" option-label="name" option-value="id" placeholder="Sin formato" show-clear /></div>
-                    <div class="field"><label>Formato de consulta subsecuente</label><Select v-model="esp.sub_form_id" :options="formatos" option-label="name" option-value="id" placeholder="Sin formato" show-clear /></div>
-                </div>
-                <label class="chk"><Checkbox v-model="esp.active" binary />Activa</label>
+                <SeccionModal titulo="Datos generales" icono="pi pi-bookmark" color="#0891b2">
+                    <template #extra><label class="chk"><ToggleSwitch v-model="esp.active" />Activa</label></template>
+                    <div class="grid2">
+                        <div class="field"><label>Nombre</label><div class="campo-ic"><i class="pi pi-tag" /><InputText v-model="esp.name" fluid /></div></div>
+                        <div class="field"><label>Costo predeterminado</label><InputNumber v-model="esp.default_cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
+                    </div>
+                    <div class="field"><label>Descripción</label><div class="campo-ic"><i class="pi pi-align-left" /><InputText v-model="esp.description" fluid /></div></div>
+                </SeccionModal>
+                <SeccionModal titulo="Formatos clínicos" icono="pi pi-file-edit" color="#7c3aed" ayuda="Se asignan automáticamente al agendar">
+                    <div class="grid2">
+                        <div class="field"><label>Primera consulta</label><Select v-model="esp.first_form_id" :options="formatos" option-label="name" option-value="id" placeholder="Sin formato" show-clear fluid /></div>
+                        <div class="field"><label>Consulta subsecuente</label><Select v-model="esp.sub_form_id" :options="formatos" option-label="name" option-value="id" placeholder="Sin formato" show-clear fluid /></div>
+                    </div>
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="esp = null" /><Button label="Guardar" @click="guardarEsp" /></template>
+            <template #footer><Button label="Cancelar" text @click="esp = null" /><Button label="Guardar especialidad" icon="pi pi-check" @click="guardarEsp" /></template>
         </Modal>
 
-        <Modal icono="pi pi-user" color="#1f9e86" subtitulo="La agenda se genera a partir de este horario" :visible="!!med" :header="med?.id ? 'Configurar a ' + med.name : 'Nuevo médico'" ancho="860px" @update:visible="med = null">
+        <Modal icono="pi pi-user" color="#1f9e86" subtitulo="La agenda se genera automáticamente a partir de este horario" :visible="!!med" :header="med?.id ? 'Configurar a ' + med.name : 'Nuevo médico'" ancho="1000px" @update:visible="med = null">
             <template v-if="med">
-                <div class="grid3">
-                    <div class="field"><label>Nombre completo</label><InputText v-model="med.name" /></div>
-                    <div class="field"><label>Especialidad</label><Select v-model="med.specialty_id" :options="op.especialidades" option-label="name" option-value="id" /></div>
-                    <div class="field"><label>Teléfono</label><InputText v-model="med.phone" /></div>
-                </div>
-                <div class="field"><label>Días de atención</label>
-                    <div class="pills"><label v-for="x in diasOrden" :key="x"><input type="checkbox" :checked="med.days.includes(x)" @change="toggleDia(x, $event.target.checked)" />{{ DIAS[x] }}</label></div>
-                </div>
-                <div class="grid4">
-                    <div class="field"><label>Hora inicial</label><Hora v-model="med.start_time" /></div>
-                    <div class="field"><label>Hora final</label><Hora v-model="med.end_time" /></div>
-                    <div class="field"><label>Duración de consulta</label><Select v-model="med.duration" :options="[15, 20, 30, 40, 45, 50, 60].map((x) => ({ l: x + ' min', v: x }))" option-label="l" option-value="v" /></div>
-                    <div class="field"><label>Consultorio</label><Select v-model="med.resource_id" :options="op.recursos" option-label="name" option-value="id" show-clear /></div>
-                </div>
-                <div class="grid4">
-                    <div class="field"><label>Costo de consulta</label><InputNumber v-model="med.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
-                    <div class="field"><label>Anticipo</label><Select v-model="med.deposit_mode" :options="[{ l: 'Monto fijo', v: 'monto' }, { l: 'Porcentaje', v: 'porcentaje' }]" option-label="l" option-value="v" /></div>
-                    <div class="field"><label>Valor del anticipo</label><InputNumber v-model="med.deposit_value" :min="0" fluid /></div>
-                    <div class="field"><label>&nbsp;</label><label class="chk" style="min-height: 38px"><Checkbox v-model="med.active" binary />Activo</label></div>
-                </div>
-                <div class="grid2">
-                    <div class="field"><label>Observaciones</label><InputText v-model="med.notes" /></div>
-                    <div v-if="!med.id" class="field"><label>Correo del usuario del médico (opcional)</label><InputText v-model="med.email" type="email" /></div>
-                </div>
-                <div>
-                    <div class="sec-t">Vista previa de la agenda generada</div>
-                    <p v-if="!vista || !vista.valido" class="note warn small">Selecciona al menos un día y un horario válido.</p>
-                    <template v-else>
-                        <p class="small" style="margin-bottom: 8px">{{ vista.porDia }} consultas por día, {{ vista.porSemana }} por semana. Anticipo calculado: <b>{{ money(vista.anticipo) }}</b>. Próximo día: {{ fmtDL(vista.siguiente) }}.</p>
-                        <div class="times"><span v-for="s in vista.espacios" :key="s.time" class="chip plain" :class="CLASE_ESTADO[s.state]" :title="s.state">{{ s.time }} {{ s.state === 'Disponible' ? '' : s.state.toLowerCase() }}</span></div>
-                        <p v-if="vista.fuera" class="note warn small" style="margin-top: 8px">{{ vista.fuera }} citas futuras quedan fuera del nuevo horario. Seguirán visibles marcadas como fuera de horario para que las reagendes.</p>
-                    </template>
+                <div class="nc-grid">
+                    <div class="nc-col">
+                        <SeccionModal paso="1" titulo="Datos del médico" icono="pi pi-id-card" color="#2b5480">
+                            <template #extra><label class="chk"><ToggleSwitch v-model="med.active" />Activo</label></template>
+                            <div class="field"><label>Nombre completo</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="med.name" fluid /></div></div>
+                            <div class="grid2">
+                                <div class="field"><label>Especialidad</label><Select v-model="med.specialty_id" :options="op.especialidades" option-label="name" option-value="id" fluid /></div>
+                                <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="med.phone" fluid /></div></div>
+                            </div>
+                            <div class="grid2">
+                                <div class="field"><label>Consultorio</label><Select v-model="med.resource_id" :options="op.recursos" option-label="name" option-value="id" show-clear fluid /></div>
+                                <div v-if="!med.id" class="field"><label>Correo del usuario (opcional)</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="med.email" type="email" fluid /></div></div>
+                            </div>
+                        </SeccionModal>
+                        <SeccionModal paso="2" titulo="Horario de atención" icono="pi pi-calendar-clock" color="#1f9e86">
+                            <div class="field"><label>Días de atención</label>
+                                <div class="pills"><label v-for="x in diasOrden" :key="x"><input type="checkbox" :checked="med.days.includes(x)" @change="toggleDia(x, $event.target.checked)" />{{ DIAS[x] }}</label></div>
+                            </div>
+                            <div class="grid3">
+                                <div class="field"><label>Hora inicial</label><Hora v-model="med.start_time" /></div>
+                                <div class="field"><label>Hora final</label><Hora v-model="med.end_time" /></div>
+                                <div class="field"><label>Duración</label><Select v-model="med.duration" :options="[15, 20, 30, 40, 45, 50, 60].map((x) => ({ l: x + ' min', v: x }))" option-label="l" option-value="v" fluid /></div>
+                            </div>
+                        </SeccionModal>
+                        <SeccionModal paso="3" titulo="Costos y anticipo" icono="pi pi-wallet" color="#e08a1e">
+                            <div class="grid3">
+                                <div class="field"><label>Costo de consulta</label><InputNumber v-model="med.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
+                                <div class="field"><label>Tipo de anticipo</label><Select v-model="med.deposit_mode" :options="[{ l: 'Monto fijo', v: 'monto' }, { l: 'Porcentaje', v: 'porcentaje' }]" option-label="l" option-value="v" fluid /></div>
+                                <div class="field"><label>{{ med.deposit_mode === 'porcentaje' ? 'Porcentaje' : 'Monto' }}</label><InputNumber v-model="med.deposit_value" :min="0" :suffix="med.deposit_mode === 'porcentaje' ? ' %' : ''" :prefix="med.deposit_mode === 'porcentaje' ? '' : '$ '" fluid /></div>
+                            </div>
+                            <div class="field"><label>Observaciones</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText v-model="med.notes" placeholder="Opcional" fluid /></div></div>
+                        </SeccionModal>
+                    </div>
+                    <div class="nc-col">
+                        <div class="resumen-cita">
+                            <h4><i class="pi pi-eye" /> Vista previa de la agenda</h4>
+                            <template v-if="vista && vista.valido">
+                                <div class="rc-row"><i class="pi pi-calendar" /><span>Consultas por día</span><b>{{ vista.porDia }}</b></div>
+                                <div class="rc-row"><i class="pi pi-chart-bar" /><span>Por semana</span><b>{{ vista.porSemana }}</b></div>
+                                <div class="rc-row"><i class="pi pi-wallet" /><span>Anticipo calculado</span><b>{{ money(vista.anticipo) }}</b></div>
+                                <div class="rc-row"><i class="pi pi-forward" /><span>Próximo día</span><b>{{ fmtDL(vista.siguiente) }}</b></div>
+                            </template>
+                            <div v-else class="rc-nota"><i class="pi pi-info-circle" /><span>Selecciona al menos un día y un horario válido.</span></div>
+                        </div>
+                        <SeccionModal v-if="vista && vista.valido" titulo="Espacios generados" icono="pi pi-th-large" color="#173a5f" :ayuda="'Ejemplo: ' + fmtDL(vista.siguiente)">
+                            <div class="times"><span v-for="s in vista.espacios" :key="s.time" class="chip plain" :class="CLASE_ESTADO[s.state]" :title="s.state">{{ s.time }} {{ s.state === 'Disponible' ? '' : s.state.toLowerCase() }}</span></div>
+                            <p v-if="vista.fuera" class="note warn small"><i class="pi pi-exclamation-triangle" /> {{ vista.fuera }} citas futuras quedan fuera del nuevo horario. Seguirán visibles marcadas como fuera de horario para que las reagendes.</p>
+                        </SeccionModal>
+                    </div>
                 </div>
             </template>
-            <template #footer><Button label="Cancelar" text @click="med = null" /><Button label="Guardar configuración" @click="guardarMed" /></template>
+            <template #footer><Button label="Cancelar" text @click="med = null" /><Button label="Guardar configuración" icon="pi pi-check" @click="guardarMed" /></template>
         </Modal>
 
-        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Consultorios, quirófanos, salas y habitaciones" :visible="!!rec" :header="rec?.id ? 'Editar espacio' : 'Nuevo espacio'" ancho="760px" @update:visible="rec = null">
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Consultorios, quirófanos, salas y habitaciones" :visible="!!rec" :header="rec?.id ? 'Editar espacio' : 'Nuevo espacio'" ancho="820px" @update:visible="rec = null">
             <template v-if="rec">
-                <div class="grid3">
-                    <div class="field"><label>Nombre</label><InputText v-model="rec.name" /></div>
-                    <div class="field"><label>Tipo</label><Select v-model="rec.type" :options="page.props.catalogo.tiposRecurso" /></div>
-                    <div class="field"><label>Ubicación</label><InputText v-model="rec.location" /></div>
-                    <div class="field"><label>Capacidad</label><InputNumber v-model="rec.capacity" :min="1" fluid /></div>
-                    <div class="field"><label>Abre</label><Hora v-model="rec.opens_at" /></div>
-                    <div class="field"><label>Cierra</label><Hora v-model="rec.closes_at" /></div>
-                    <div class="field"><label>Costo</label><InputNumber v-model="rec.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
-                    <div class="field"><label>Responsable</label><InputText v-model="rec.responsible" /></div>
-                    <div class="field"><label>&nbsp;</label><label class="chk" style="min-height: 38px"><Checkbox v-model="rec.active" binary />Activo</label></div>
-                </div>
-                <div class="field"><label>Equipamiento</label><InputText v-model="rec.equipment" /></div>
-                <div class="field"><label>Reglas de uso</label><InputText v-model="rec.rules" /></div>
+                <SeccionModal titulo="Identificación" icono="pi pi-building" color="#6b4bc9">
+                    <template #extra><label class="chk"><ToggleSwitch v-model="rec.active" />Activo</label></template>
+                    <div class="grid3">
+                        <div class="field"><label>Nombre</label><div class="campo-ic"><i class="pi pi-tag" /><InputText v-model="rec.name" fluid /></div></div>
+                        <div class="field"><label>Tipo</label><Select v-model="rec.type" :options="page.props.catalogo.tiposRecurso" fluid /></div>
+                        <div class="field"><label>Ubicación</label><div class="campo-ic"><i class="pi pi-map-marker" /><InputText v-model="rec.location" fluid /></div></div>
+                    </div>
+                </SeccionModal>
+                <SeccionModal titulo="Operación" icono="pi pi-clock" color="#1f9e86">
+                    <div class="grid4">
+                        <div class="field"><label>Abre</label><Hora v-model="rec.opens_at" /></div>
+                        <div class="field"><label>Cierra</label><Hora v-model="rec.closes_at" /></div>
+                        <div class="field"><label>Capacidad</label><InputNumber v-model="rec.capacity" :min="1" suffix=" pers." fluid /></div>
+                        <div class="field"><label>Costo</label><InputNumber v-model="rec.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
+                    </div>
+                    <div class="grid2">
+                        <div class="field"><label>Responsable</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="rec.responsible" fluid /></div></div>
+                        <div class="field"><label>Equipamiento</label><div class="campo-ic"><i class="pi pi-wrench" /><InputText v-model="rec.equipment" fluid /></div></div>
+                    </div>
+                    <div class="field"><label>Reglas de uso</label><div class="campo-ic"><i class="pi pi-list" /><InputText v-model="rec.rules" fluid /></div></div>
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="rec = null" /><Button label="Guardar" @click="guardarRec" /></template>
+            <template #footer><Button label="Cancelar" text @click="rec = null" /><Button label="Guardar espacio" icon="pi pi-check" @click="guardarRec" /></template>
         </Modal>
 
-        <Modal icono="pi pi-id-card" color="#2b5480" subtitulo="Se valida que el paciente no exista en SIGMA24" :visible="!!pac" :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" ancho="600px" @update:visible="pac = null">
+        <Modal icono="pi pi-id-card" color="#2b5480" subtitulo="Se valida que el paciente no exista en SIGMA24" :visible="!!pac" :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" ancho="640px" @update:visible="pac = null">
             <template v-if="pac">
-                <p v-if="pac.id" class="muted small">ID SIGMA24: <code>{{ pac.sigma_id }}</code> (no editable)</p>
-                <div class="grid2">
-                    <div class="field"><label>Nombre completo</label><InputText v-model="pac.name" /></div>
-                    <div class="field"><label>Fecha de nacimiento</label><Fecha v-model="pac.birth_date" :max="hoyISO()" /></div>
-                    <div class="field"><label>Teléfono</label><InputText v-model="pac.phone" /></div>
-                    <div class="field"><label>Correo</label><InputText v-model="pac.email" type="email" /></div>
-                </div>
+                <div v-if="pac.id" class="note"><i class="pi pi-id-card" /> ID SIGMA24: <code>{{ pac.sigma_id }}</code> (no editable)</div>
+                <SeccionModal titulo="Datos personales" icono="pi pi-user" color="#2b5480">
+                    <div class="grid2">
+                        <div class="field"><label>Nombre completo</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="pac.name" fluid /></div></div>
+                        <div class="field"><label>Fecha de nacimiento</label><Fecha v-model="pac.birth_date" :max="hoyISO()" /></div>
+                    </div>
+                </SeccionModal>
+                <SeccionModal titulo="Contacto" icono="pi pi-phone" color="#16a34a" ayuda="Se usa para WhatsApp, SMS y correo">
+                    <div class="grid2">
+                        <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="pac.phone" fluid /></div></div>
+                        <div class="field"><label>Correo</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="pac.email" type="email" fluid /></div></div>
+                    </div>
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="pac = null" /><Button label="Guardar" @click="guardarPac" /></template>
+            <template #footer><Button label="Cancelar" text @click="pac = null" /><Button label="Guardar paciente" icon="pi pi-check" @click="guardarPac" /></template>
         </Modal>
 
-        <Modal icono="pi pi-history" color="#0891b2" subtitulo="Historial de citas del paciente" :visible="!!historial" :header="historial ? `${historial.patient.name} (${historial.patient.sigma_id})` : ''" ancho="760px" @update:visible="historial = null">
-            <div v-if="historial" class="card tbl-wrap"><table class="tbl">
-                <thead><tr><th>Fecha</th><th>Médico</th><th>Motivo</th><th>Estado</th><th>Historia</th></tr></thead>
-                <tbody>
-                    <tr v-for="a in historial.citas" :key="a.id" class="click" @click="historial = null; ui.abrirCita(a.id)">
-                        <td style="white-space: nowrap">{{ fmtDS(a.date) }} {{ a.time }}</td><td>{{ a.doctor }}</td><td>{{ a.reason }}</td><td><Chip :valor="a.status" /></td><td><Chip :valor="a.hc_status" tipo="hc" /></td>
-                    </tr>
-                    <tr v-if="!historial.citas.length"><td colspan="5"><div class="empty">Sin citas registradas</div></td></tr>
-                </tbody>
-            </table></div>
+        <Modal icono="pi pi-history" color="#0891b2" subtitulo="Historial de citas del paciente" :visible="!!historial" :header="historial ? `${historial.patient.name} (${historial.patient.sigma_id})` : ''" ancho="820px" @update:visible="historial = null">
+            <SeccionModal v-if="historial" titulo="Citas" icono="pi pi-calendar" color="#0891b2" :ayuda="historial.citas.length + ' registradas · clic para ver el detalle'">
+                <div class="tbl-wrap"><table class="tbl">
+                    <thead><tr><th>Fecha</th><th>Médico</th><th>Motivo</th><th>Estado</th><th>Historia</th></tr></thead>
+                    <tbody>
+                        <tr v-for="a in historial.citas" :key="a.id" class="click" @click="historial = null; ui.abrirCita(a.id)">
+                            <td style="white-space: nowrap">{{ fmtDS(a.date) }} {{ a.time }}</td><td>{{ a.doctor }}</td><td>{{ a.reason }}</td><td><Chip :valor="a.status" /></td><td><Chip :valor="a.hc_status" tipo="hc" /></td>
+                        </tr>
+                        <tr v-if="!historial.citas.length"><td colspan="5"><div class="empty">Sin citas registradas</div></td></tr>
+                    </tbody>
+                </table></div>
+            </SeccionModal>
         </Modal>
     </AppLayout>
 </template>

@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -13,6 +14,8 @@ const f = ref({});
 const paciente = ref(null);
 const guardando = ref(false);
 const medicos = computed(() => [{ id: null, name: 'Cualquier médico' }, ...op.value.medicos.filter((d) => d.specialty_id === f.value.specialty_id)]);
+const PREF = [{ v: 'Cualquier horario', i: 'pi pi-clock', c: '#173a5f' }, { v: 'Mañana', i: 'pi pi-sun', c: '#e08a1e' }, { v: 'Tarde', i: 'pi pi-moon', c: '#6b4bc9' }];
+const PRIO = [{ v: 'Alta', i: 'pi pi-angle-double-up', c: '#d64545' }, { v: 'Media', i: 'pi pi-minus', c: '#e08a1e' }, { v: 'Baja', i: 'pi pi-angle-double-down', c: '#1f9e86' }];
 
 watch(visible, (v) => {
     if (!v) return;
@@ -34,20 +37,28 @@ async function guardar() {
 </script>
 
 <template>
-    <Modal icono="pi pi-user-plus" color="#e08a1e" subtitulo="Se le avisará cuando se libere un horario compatible" v-model:visible="visible" header="Agregar a lista de espera" ancho="600px">
-        <div class="field"><label>Paciente</label><PacienteBuscador v-model="paciente" /></div>
-        <div class="grid2">
-            <div class="field"><label>Especialidad</label><Select v-model="f.specialty_id" :options="op.especialidades" option-label="name" option-value="id" /></div>
-            <div class="field"><label>Médico</label><Select v-model="f.doctor_id" :options="medicos" option-label="name" option-value="id" /></div>
-        </div>
-        <div class="grid2">
-            <div class="field"><label>Preferencia de horario</label><Select v-model="f.preference" :options="['Cualquier horario', 'Mañana', 'Tarde']" /></div>
-            <div class="field"><label>Prioridad</label><Select v-model="f.priority" :options="['Alta', 'Media', 'Baja']" /></div>
-        </div>
-        <div class="field"><label for="w-n">Observaciones</label><InputText id="w-n" v-model="f.notes" /></div>
+    <Modal v-model:visible="visible" titulo="Agregar a lista de espera" subtitulo="Se le avisará cuando se libere un horario compatible" icono="pi pi-user-plus" color="#e08a1e" ancho="720px">
+        <SeccionModal paso="1" titulo="Paciente" icono="pi pi-user" color="#2b5480"><PacienteBuscador v-model="paciente" /></SeccionModal>
+        <SeccionModal paso="2" titulo="Especialidad y médico" icono="pi pi-heart" color="#1f9e86">
+            <div class="grid2">
+                <div class="field"><label>Especialidad</label><Select v-model="f.specialty_id" :options="op.especialidades" option-label="name" option-value="id" fluid /></div>
+                <div class="field"><label>Médico</label><Select v-model="f.doctor_id" :options="medicos" option-label="name" option-value="id" fluid /></div>
+            </div>
+        </SeccionModal>
+        <SeccionModal paso="3" titulo="Preferencias" icono="pi pi-sliders-h" color="#e08a1e">
+            <div class="grid2">
+                <div class="field"><label>Horario preferido</label>
+                    <div class="opciones-ic" style="grid-template-columns: repeat(3, 1fr)"><button v-for="p in PREF" :key="p.v" type="button" class="op-ic" :class="{ on: f.preference === p.v }" :style="{ '--oc': p.c }" @click="f.preference = p.v"><i :class="p.i" />{{ p.v === 'Cualquier horario' ? 'Cualquiera' : p.v }}</button></div>
+                </div>
+                <div class="field"><label>Prioridad</label>
+                    <div class="opciones-ic" style="grid-template-columns: repeat(3, 1fr)"><button v-for="p in PRIO" :key="p.v" type="button" class="op-ic" :class="{ on: f.priority === p.v }" :style="{ '--oc': p.c }" @click="f.priority = p.v"><i :class="p.i" />{{ p.v }}</button></div>
+                </div>
+            </div>
+            <div class="field"><label for="w-n">Observaciones</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText id="w-n" v-model="f.notes" placeholder="Ej. solo puede antes de las 12:00" fluid /></div></div>
+        </SeccionModal>
         <template #footer>
             <Button label="Cancelar" text @click="ui.cerrar()" />
-            <Button label="Agregar a la lista" icon="pi pi-check" :loading="guardando" @click="guardar" />
+            <Button label="Agregar a la lista" icon="pi pi-check" severity="warn" :loading="guardando" @click="guardar" />
         </template>
     </Modal>
 </template>

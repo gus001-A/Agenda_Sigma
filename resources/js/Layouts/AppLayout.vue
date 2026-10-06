@@ -136,7 +136,7 @@ onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEv
                     </div>
                     <div class="page-acts">
                         <slot name="acciones" />
-                        <Button v-if="puede('cita')" label="Nueva cita" icon="pi pi-plus" @click="ui.abrir('nuevaCita', {})" />
+                        <Button v-if="puede('cita')" label="Nueva cita" icon="pi pi-calendar-plus" class="btn-cta" @click="ui.abrir('nuevaCita', {})" />
                     </div>
                 </div>
                 <section class="view"><slot /></section>

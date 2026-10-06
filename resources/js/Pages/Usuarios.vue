@@ -1,5 +1,6 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
+import SeccionModal from '@/Components/SeccionModal.vue';
 import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -74,18 +75,25 @@ async function permiso(rol, mod, v) { await api.post(route('api.permisos.update'
             <div class="body" style="border-top: 1px solid var(--line-2)"><p class="muted small"><i class="pi pi-info-circle" /> Los cambios aplican de inmediato. Además del acceso al módulo, cada rol tiene permisos de acción: Recepción no ve el contenido clínico, el Médico solo ve a sus pacientes y el rol Consulta es de solo lectura.</p></div>
         </div>
 
-        <Modal icono="pi pi-user" color="#4f46e5" subtitulo="Rol y acceso al sistema" :visible="!!u" :header="u?.id ? 'Editar usuario' : 'Nuevo usuario'" ancho="560px" @update:visible="u = null">
+        <Modal icono="pi pi-user" color="#4f46e5" subtitulo="Rol y acceso al sistema" :visible="!!u" :header="u?.id ? 'Editar usuario' : 'Nuevo usuario'" ancho="680px" @update:visible="u = null">
             <template v-if="u">
-                <div class="field"><label>Nombre</label><InputText v-model="u.name" /></div>
-                <div class="grid2">
-                    <div class="field"><label>Rol</label><Select v-model="u.role" :options="roles" /></div>
-                    <div class="field"><label>Correo</label><InputText v-model="u.email" type="email" /></div>
-                </div>
-                <div v-if="u.role === 'Médico'" class="field"><label>Agenda del médico</label><Select v-model="u.doctor_id" :options="medicos" option-label="name" option-value="id" placeholder="Elige médico" /></div>
-                <div class="field"><label>{{ u.id ? 'Nueva contraseña (opcional)' : 'Contraseña (opcional)' }}</label><Password v-model="u.password" toggle-mask fluid :feedback="false" /></div>
-                <p v-if="!u.id" class="muted small">Si no defines contraseña, el usuario recibirá un correo para definirla.</p>
+                <SeccionModal paso="1" titulo="Datos de la cuenta" icono="pi pi-id-card" color="#4f46e5">
+                    <div class="grid2">
+                        <div class="field"><label>Nombre</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="u.name" fluid /></div></div>
+                        <div class="field"><label>Correo</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="u.email" type="email" fluid /></div></div>
+                    </div>
+                </SeccionModal>
+                <SeccionModal paso="2" titulo="Rol" icono="pi pi-shield" color="#6b4bc9" ayuda="Define a qué módulos y acciones tiene acceso">
+                    <div class="opciones-ic">
+                        <button v-for="r in roles" :key="r" type="button" class="op-ic" :class="{ on: u.role === r }" :style="{ '--oc': COLOR_ROL[r] }" @click="u.role = r"><i :class="ICONO_ROL[r]" />{{ r }}</button>
+                    </div>
+                    <div v-if="u.role === 'Médico'" class="field"><label>Agenda del médico</label><Select v-model="u.doctor_id" :options="medicos" option-label="name" option-value="id" placeholder="Elige médico" fluid /></div>
+                </SeccionModal>
+                <SeccionModal paso="3" titulo="Contraseña" icono="pi pi-lock" color="#173a5f" :ayuda="u.id ? 'Déjala vacía para conservar la actual' : 'Si no la defines, el usuario recibirá un correo para crearla'">
+                    <Password v-model="u.password" toggle-mask fluid :feedback="false" placeholder="Opcional" />
+                </SeccionModal>
             </template>
-            <template #footer><Button label="Cancelar" text @click="u = null" /><Button label="Guardar" icon="pi pi-check" @click="guardar" /></template>
+            <template #footer><Button label="Cancelar" text @click="u = null" /><Button label="Guardar usuario" icon="pi pi-check" @click="guardar" /></template>
         </Modal>
     </AppLayout>
 </template>
