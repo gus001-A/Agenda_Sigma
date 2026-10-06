@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "sigma24", "runtimeExecutable": "php", "runtimeArgs": ["artisan", "serve", "--port=8030"], "port": 8030 }
+  ]
+}
