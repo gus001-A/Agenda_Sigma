@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -33,7 +34,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Agregar a lista de espera" :style="{ width: '600px' }" :breakpoints="{ '640px': '96vw' }">
+    <Modal icono="pi pi-user-plus" color="#e08a1e" subtitulo="Se le avisará cuando se libere un horario compatible" v-model:visible="visible" header="Agregar a lista de espera" ancho="600px">
         <div class="field"><label>Paciente</label><PacienteBuscador v-model="paciente" /></div>
         <div class="grid2">
             <div class="field"><label>Especialidad</label><Select v-model="f.specialty_id" :options="op.especialidades" option-label="name" option-value="id" /></div>
@@ -48,5 +49,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Agregar a la lista" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

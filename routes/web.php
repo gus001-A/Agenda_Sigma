@@ -72,6 +72,8 @@ Route::middleware(['auth', 'activo'])->group(function () {
         Route::post('citas/{cita}/reagendar', [CitasController::class, 'reagendar'])->middleware('accion:cita')->name('citas.reagendar');
         Route::post('citas/{cita}/finalizar', [CitasController::class, 'finalizar'])->middleware('accion:consulta')->name('citas.finalizar');
         Route::post('citas/{cita}/reenviar', [CitasController::class, 'reenviar'])->middleware('accion:cita')->name('citas.reenviar');
+        Route::get('citas/{cita}/mensaje', [CitasController::class, 'mensaje'])->middleware('accion:cita')->name('citas.mensaje');
+        Route::post('citas/{cita}/mensaje', [CitasController::class, 'registrarMensaje'])->middleware('accion:cita')->name('citas.mensaje.store');
         Route::get('citas/{cita}/historia', [CitasController::class, 'historia'])->middleware('accion:verclinico')->name('citas.historia');
         Route::post('citas/{cita}/revisada', [CitasController::class, 'revisada'])->middleware('accion:clinico')->name('citas.revisada');
         Route::post('citas/{cita}/actualizacion', [CitasController::class, 'actualizacion'])->middleware('accion:clinico')->name('citas.actualizacion');

@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -24,7 +25,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Editar datos de la cita" :style="{ width: '560px' }" :breakpoints="{ '600px': '96vw' }">
+    <Modal icono="pi pi-pencil" color="#2b5480" subtitulo="Tipo de consulta, costo, motivo y canal de aviso" v-model:visible="visible" header="Editar datos de la cita" ancho="560px">
         <div class="grid2">
             <div class="field"><label>Tipo de consulta</label><Select v-model="f.type" :options="page.props.catalogo.tiposConsulta" /></div>
             <div class="field"><label>Costo</label><InputNumber v-model="f.cost" mode="currency" currency="MXN" locale="es-MX" :min="0" fluid /></div>
@@ -37,5 +38,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Guardar cambios" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

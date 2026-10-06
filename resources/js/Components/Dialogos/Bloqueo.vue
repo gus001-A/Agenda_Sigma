@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
@@ -47,7 +48,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Bloquear horario" :style="{ width: '620px' }" :breakpoints="{ '660px': '96vw' }">
+    <Modal icono="pi pi-ban" color="#64748b" subtitulo="Los espacios bloqueados no se pueden agendar" v-model:visible="visible" header="Bloquear horario" ancho="620px">
         <div class="grid2">
             <div class="field"><label>Aplica a</label><Select v-model="f.scope" :options="[{ l: 'Agenda de médico', v: 'doctor' }, { l: 'Espacio o quirófano', v: 'resource' }]" option-label="l" option-value="v" /></div>
             <div class="field"><label>Médico o espacio</label><Select v-model="f.target_id" :options="destinos" option-label="name" option-value="id" filter /></div>
@@ -77,5 +78,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Crear bloqueo" icon="pi pi-ban" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

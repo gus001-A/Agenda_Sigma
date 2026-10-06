@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -184,7 +185,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
         </TablaDatos>
 
         <!-- Diálogos -->
-        <Dialog :visible="!!esp" modal :header="esp?.id ? 'Editar especialidad' : 'Nueva especialidad'" :style="{ width: '600px' }" :breakpoints="{ '640px': '96vw' }" @update:visible="esp = null">
+        <Modal icono="pi pi-bookmark" color="#0891b2" subtitulo="Costo base y formatos clínicos asociados" :visible="!!esp" :header="esp?.id ? 'Editar especialidad' : 'Nueva especialidad'" ancho="600px" @update:visible="esp = null">
             <template v-if="esp">
                 <div class="grid2">
                     <div class="field"><label>Nombre</label><InputText v-model="esp.name" /></div>
@@ -198,9 +199,9 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                 <label class="chk"><Checkbox v-model="esp.active" binary />Activa</label>
             </template>
             <template #footer><Button label="Cancelar" text @click="esp = null" /><Button label="Guardar" @click="guardarEsp" /></template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!med" modal :header="med?.id ? 'Configurar a ' + med.name : 'Nuevo médico'" :style="{ width: '860px' }" :breakpoints="{ '900px': '96vw' }" @update:visible="med = null">
+        <Modal icono="pi pi-user" color="#1f9e86" subtitulo="La agenda se genera a partir de este horario" :visible="!!med" :header="med?.id ? 'Configurar a ' + med.name : 'Nuevo médico'" ancho="860px" @update:visible="med = null">
             <template v-if="med">
                 <div class="grid3">
                     <div class="field"><label>Nombre completo</label><InputText v-model="med.name" /></div>
@@ -237,9 +238,9 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                 </div>
             </template>
             <template #footer><Button label="Cancelar" text @click="med = null" /><Button label="Guardar configuración" @click="guardarMed" /></template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!rec" modal :header="rec?.id ? 'Editar espacio' : 'Nuevo espacio'" :style="{ width: '760px' }" :breakpoints="{ '800px': '96vw' }" @update:visible="rec = null">
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Consultorios, quirófanos, salas y habitaciones" :visible="!!rec" :header="rec?.id ? 'Editar espacio' : 'Nuevo espacio'" ancho="760px" @update:visible="rec = null">
             <template v-if="rec">
                 <div class="grid3">
                     <div class="field"><label>Nombre</label><InputText v-model="rec.name" /></div>
@@ -256,9 +257,9 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                 <div class="field"><label>Reglas de uso</label><InputText v-model="rec.rules" /></div>
             </template>
             <template #footer><Button label="Cancelar" text @click="rec = null" /><Button label="Guardar" @click="guardarRec" /></template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!pac" modal :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" :style="{ width: '600px' }" :breakpoints="{ '640px': '96vw' }" @update:visible="pac = null">
+        <Modal icono="pi pi-id-card" color="#2b5480" subtitulo="Se valida que el paciente no exista en SIGMA24" :visible="!!pac" :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" ancho="600px" @update:visible="pac = null">
             <template v-if="pac">
                 <p v-if="pac.id" class="muted small">ID SIGMA24: <code>{{ pac.sigma_id }}</code> (no editable)</p>
                 <div class="grid2">
@@ -269,9 +270,9 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                 </div>
             </template>
             <template #footer><Button label="Cancelar" text @click="pac = null" /><Button label="Guardar" @click="guardarPac" /></template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!historial" modal :header="historial ? `${historial.patient.name} (${historial.patient.sigma_id})` : ''" :style="{ width: '760px' }" :breakpoints="{ '800px': '96vw' }" @update:visible="historial = null">
+        <Modal icono="pi pi-history" color="#0891b2" subtitulo="Historial de citas del paciente" :visible="!!historial" :header="historial ? `${historial.patient.name} (${historial.patient.sigma_id})` : ''" ancho="760px" @update:visible="historial = null">
             <div v-if="historial" class="card tbl-wrap"><table class="tbl">
                 <thead><tr><th>Fecha</th><th>Médico</th><th>Motivo</th><th>Estado</th><th>Historia</th></tr></thead>
                 <tbody>
@@ -281,6 +282,6 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                     <tr v-if="!historial.citas.length"><td colspan="5"><div class="empty">Sin citas registradas</div></td></tr>
                 </tbody>
             </table></div>
-        </Dialog>
+        </Modal>
     </AppLayout>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch, nextTick } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -93,7 +94,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Nueva cita" :style="{ width: '820px' }" :breakpoints="{ '860px': '96vw' }">
+    <Modal icono="pi pi-calendar-plus" color="#1f9e86" subtitulo="Elige paciente, médico y un horario disponible" v-model:visible="visible" header="Nueva cita" ancho="820px">
         <div class="field"><label>Paciente (expediente SIGMA24)</label><PacienteBuscador v-model="paciente" /></div>
         <div class="grid3">
             <div class="field"><label>Especialidad</label><Select v-model="f.specialty_id" :options="op.especialidades" option-label="name" option-value="id" placeholder="Elige especialidad" show-clear /></div>
@@ -138,5 +139,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Registrar cita" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -23,12 +24,12 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Reembolsar anticipo" :style="{ width: '500px' }" :breakpoints="{ '560px': '96vw' }">
+    <Modal icono="pi pi-replay" color="#8e3b69" subtitulo="Queda registrado en el historial de la cita" v-model:visible="visible" header="Reembolsar anticipo" ancho="500px">
         <p>Se registrará el reembolso de {{ money(a.paid) }} a {{ a.patient }}.</p>
         <div class="field"><label for="rf-n">Motivo</label><InputText id="rf-n" v-model="motivo" /></div>
         <template #footer>
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Registrar reembolso" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

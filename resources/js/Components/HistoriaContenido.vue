@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref } from 'vue';
 import axios from 'axios';
 import { fmtStamp } from '@/lib/util';
@@ -48,7 +49,7 @@ async function abrir(f) {
         </div>
     </div>
 
-    <Dialog :visible="!!archivo" modal :header="archivo?.name" :style="{ width: '640px' }" :breakpoints="{ '680px': '96vw' }" @update:visible="archivo = null">
+    <Modal icono="pi pi-paperclip" color="#6b4bc9" subtitulo="Documento clínico" :visible="!!archivo" :header="archivo?.name" ancho="640px" @update:visible="archivo = null">
         <template v-if="archivo">
             <img v-if="archivo.exists && archivo.image" :src="archivo.url" :alt="archivo.name" style="max-width: 100%; border-radius: 8px" />
             <iframe v-else-if="archivo.exists" :src="archivo.url" style="width: 100%; height: 60vh; border: 1px solid var(--line); border-radius: 8px" />
@@ -60,5 +61,5 @@ async function abrir(f) {
                 <span class="muted small"><i class="pi pi-lock" style="font-size: 11px" /> Acceso registrado en auditoría. Solo usuarios autorizados pueden visualizar documentos clínicos.</span>
             </div>
         </template>
-    </Dialog>
+    </Modal>
 </template>

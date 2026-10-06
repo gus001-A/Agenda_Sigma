@@ -178,6 +178,49 @@ class CitasController extends Controller
         return $this->ok("Enlace reenviado por {$cita->channel}");
     }
 
+    /** Teléfono en formato internacional para WhatsApp/SMS (México: 52 + 10 dígitos). */
+    private function telefonoInternacional(?string $tel): ?string
+    {
+        $d = preg_replace('/\D+/', '', (string) $tel);
+        if ($d === '') {
+            return null;
+        }
+
+        return strlen($d) === 10 ? '52'.$d : $d;
+    }
+
+    /** Mensaje prellenado para enviar manualmente por WhatsApp, SMS o correo. */
+    public function mensaje(Request $request, Appointment $cita): JsonResponse
+    {
+        $tipo = in_array($request->tipo, ['registro', 'r24', 'historia', 'cobro', 'manual'], true) ? $request->tipo : 'registro';
+        $cita->loadMissing('patient');
+
+        return response()->json([
+            'texto' => Mensajeria::texto($cita, $tipo),
+            'telefono' => $cita->patient->phone,
+            'telefono_int' => $this->telefonoInternacional($cita->patient->phone),
+            'email' => $cita->patient->email,
+            'patient' => $cita->patient->name,
+            'portal_url' => $cita->portalUrl(),
+        ]);
+    }
+
+    /** Registra el envío manual (el mensaje se abre en WhatsApp/SMS/correo desde el navegador). */
+    public function registrarMensaje(Request $request, Appointment $cita): JsonResponse
+    {
+        $v = $request->validate([
+            'canal' => ['required', Rule::in(['WhatsApp', 'SMS', 'Correo electrónico'])],
+            'tipo' => ['required', Rule::in(['registro', 'r24', 'historia', 'cobro', 'manual'])],
+            'texto' => 'required|string|max:2000',
+        ], [], ['texto' => 'mensaje']);
+        $cita->messages()->create(['channel' => $v['canal'], 'kind' => $v['tipo'], 'body' => $v['texto'], 'status' => 'Enviado', 'sent_at' => now()]);
+        $etiqueta = Catalogo::ETIQUETAS_MENSAJE[$v['tipo']] ?? 'Mensaje';
+        $cita->registrar("{$etiqueta} enviado por {$v['canal']}");
+        Auditoria::log('Mensaje enviado', "{$cita->patient->name}: {$etiqueta} por {$v['canal']}", $cita);
+
+        return $this->ok("Mensaje registrado. Se abrió {$v['canal']} con el texto listo para enviar.");
+    }
+
     public function historia(Request $request, Appointment $cita): JsonResponse
     {
         $this->autorizarClinico($request, $cita);

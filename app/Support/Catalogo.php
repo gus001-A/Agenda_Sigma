@@ -100,7 +100,7 @@ class Catalogo
     public const ETIQUETAS_MENSAJE = [
         'registro' => 'Cita registrada', 'reagenda' => 'Cita reagendada', 'cancelacion' => 'Cita cancelada',
         'r72' => 'Recordatorio 72 h', 'r24' => 'Recordatorio 24 h', 'r0' => 'Recordatorio del día',
-        'actualizar' => 'Solicitud de actualización', 'confirmacion' => 'Confirmación recibida', 'anticipo' => 'Anticipo registrado',
+        'actualizar' => 'Solicitud de actualización', 'confirmacion' => 'Confirmación recibida', 'anticipo' => 'Anticipo registrado', 'historia' => 'Recordatorio de historia clínica', 'cobro' => 'Recordatorio de anticipo', 'manual' => 'Mensaje personalizado',
     ];
 
     public static function fechaLarga(string $iso): string

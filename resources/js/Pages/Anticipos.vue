@@ -21,7 +21,7 @@ const columnas = computed(() => [
     { campo: 'paid', titulo: 'Pagado', alinear: 'right' },
     { campo: 'balance', titulo: 'Saldo', alinear: 'right' },
     { campo: 'deposit_state', titulo: 'Anticipo', filtro: 'lista', opciones: ['Pendiente', 'Parcial', 'Pagado', 'Reembolsado'] },
-    { campo: 'accion', titulo: 'Acción', ordenar: false, ancho: '150px' },
+    { campo: 'accion', titulo: 'Acciones', ordenar: false, ancho: '190px' },
 ]);
 </script>
 
@@ -44,6 +44,7 @@ const columnas = computed(() => [
             <template #c-accion="{ fila }">
                 <div class="accs">
                     <Accion icono="pi pi-eye" tip="Ver detalle de la cita" color="azul" @click="ui.abrirCita(fila.id)" />
+                    <Accion v-if="fila.active && fila.balance > 0 && puede('cita')" icono="pi pi-whatsapp" tip="Recordar anticipo por WhatsApp / SMS" color="verde" @click="ui.abrir('mensaje', { cita: fila, tipo: 'cobro' })" />
                     <Accion v-if="fila.active && fila.balance > 0 && puede('anticipo')" icono="pi pi-wallet" texto="Cobrar" color="ambar" @click="ui.abrir('pago', { cita: fila })" />
                     <Accion v-else-if="!fila.active && fila.paid > 0 && !fila.refunded && puede('anticipo')" icono="pi pi-replay" texto="Reembolsar" color="morado" @click="ui.abrir('reembolso', { cita: fila })" />
                 </div>

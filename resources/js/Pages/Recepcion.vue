@@ -27,7 +27,7 @@ const columnas = computed(() => [
     { campo: 'state', titulo: 'Estado', filtro: 'lista', opciones: unicos(filas.value, 'state') },
     { campo: 'hc', titulo: 'Historia clínica', filtro: 'lista', opciones: unicos(filas.value, 'hc') },
     { campo: 'anticipo', titulo: 'Anticipo', filtro: 'lista', opciones: unicos(filas.value, 'anticipo') },
-    { campo: 'accion', titulo: 'Acción', ordenar: false, ancho: '120px' },
+    { campo: 'accion', titulo: 'Acciones', ordenar: false, ancho: '130px' },
 ]);
 const colInactivas = computed(() => [
     { campo: 'time', titulo: 'Hora', filtro: 'texto', ancho: '90px' },
@@ -73,6 +73,7 @@ const conteo = (estados) => props.filas.filter((r) => estados.includes(r.state))
                     <Accion v-else-if="fila.state === 'Bloqueada'" icono="pi pi-lock" tip="Administrar bloqueo" color="gris" @click="ui.abrir('bloqueoVer', { id: fila.block.id })" />
                     <template v-else-if="fila.appt">
                         <Accion icono="pi pi-eye" tip="Ver detalle de la cita" color="azul" @click="ui.abrirCita(fila.appt.id)" />
+                        <Accion v-if="puede('cita') && !['Atendida', 'Cancelada'].includes(fila.state)" icono="pi pi-whatsapp" tip="Enviar WhatsApp / SMS" color="verde" @click="ui.abrir('mensaje', { cita: { id: fila.appt.id, patient: fila.appt.patient } })" />
                         <Accion v-if="fila.appt.debt > 0 && puede('anticipo')" icono="pi pi-wallet" tip="Cobrar anticipo" color="ambar" @click="ui.abrirCita(fila.appt.id)" />
                     </template>
                 </div>

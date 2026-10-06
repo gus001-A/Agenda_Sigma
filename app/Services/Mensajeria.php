@@ -48,6 +48,10 @@ class Mensajeria
             'actualizar' => "Hola {$nombre}, su médico solicita actualizar algunos datos de su historia clínica antes de la consulta del {$cuando}.\n{$enlace}",
             'confirmacion' => "{$p->name} confirmó su asistencia a la cita del {$cuando}.",
             'anticipo' => "Hola {$nombre}, recibimos su anticipo para la cita del {$cuando}. Gracias.",
+            'historia' => "Hola {$nombre}, le recordamos llenar su historia clínica antes de su cita con {$d->name} del {$cuando}. Le toma unos minutos desde su celular:
+{$enlace}",
+            'cobro' => "Hola {$nombre}, su cita con {$d->name} del {$cuando} tiene un anticipo pendiente de ".Catalogo::dinero(max(0, $a->deposit - $a->paid)).'. Puede pagarlo en recepción o por transferencia. Gracias.',
+            'manual' => "Hola {$nombre}, ",
             default => '',
         };
     }

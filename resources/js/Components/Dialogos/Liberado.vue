@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { computed } from 'vue';
 import { ui } from '@/lib/ui';
 import { fmtDL, fmtD } from '@/lib/util';
@@ -12,7 +13,7 @@ function agendar(w) {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Se liberó un espacio" :style="{ width: '760px' }" :breakpoints="{ '800px': '96vw' }">
+    <Modal icono="pi pi-bell" color="#e08a1e" subtitulo="Pacientes compatibles de la lista de espera" v-model:visible="visible" header="Se liberó un espacio" ancho="760px">
         <p>{{ d.doctor }}, {{ fmtDL(d.date) }} a las {{ d.time }}. Estos pacientes de la lista de espera son compatibles por especialidad, médico y preferencia de horario:</p>
         <div class="card tbl-wrap">
             <table class="tbl">
@@ -27,5 +28,5 @@ function agendar(w) {
             </table>
         </div>
         <template #footer><Button label="Dejar el horario libre" text @click="ui.cerrar()" /></template>
-    </Dialog>
+    </Modal>
 </template>

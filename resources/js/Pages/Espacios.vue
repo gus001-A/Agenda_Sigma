@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -106,7 +107,7 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
             </div>
         </div>
 
-        <Dialog v-model:visible="dlg" modal :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" :style="{ width: '820px' }" :breakpoints="{ '860px': '96vw' }">
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Se valida disponibilidad, horario, bloqueos y agenda del médico" v-model:visible="dlg" :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" ancho="820px">
             <div class="grid2">
                 <div class="field"><label>Paciente</label><PacienteBuscador v-model="paciente" opcional :permitir-alta="false" /></div>
                 <div class="stack" style="align-content: start">
@@ -131,9 +132,9 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
                 <Button label="Cancelar" text @click="dlg = false" />
                 <Button :label="r.id ? 'Guardar cambios' : 'Reservar espacio'" icon="pi pi-check" :disabled="!valida" :loading="guardando" @click="guardar" />
             </template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!ver" modal :header="ver?.procedure" :style="{ width: '520px' }" :breakpoints="{ '560px': '96vw' }" @update:visible="ver = null">
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Reservación de espacio" :visible="!!ver" :header="ver?.procedure" ancho="520px" @update:visible="ver = null">
             <dl v-if="ver" class="kv">
                 <dt>Recurso</dt><dd>{{ ver.resource.name }}, {{ ver.resource.location }}</dd>
                 <dt>Fecha</dt><dd>{{ fmtDL(ver.date_s) }}</dd>
@@ -151,6 +152,6 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
                 </template>
                 <Button v-else label="Cerrar" severity="secondary" outlined @click="ver = null" />
             </template>
-        </Dialog>
+        </Modal>
     </AppLayout>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
@@ -63,7 +64,7 @@ function agendar(x, t) {
             </template>
         </TablaDatos>
 
-        <Dialog :visible="!!buscando" modal :header="buscando ? 'Espacios para ' + buscando.patient : ''" :style="{ width: '720px' }" :breakpoints="{ '760px': '96vw' }" @update:visible="buscando = null">
+        <Modal icono="pi pi-search" color="#1f9e86" subtitulo="Horarios compatibles con la preferencia del paciente" :visible="!!buscando" :header="buscando ? 'Espacios para ' + buscando.patient : ''" ancho="720px" @update:visible="buscando = null">
             <template v-if="buscando">
                 <template v-if="espacios.length">
                     <p class="muted small">{{ buscando.specialty }}<template v-if="buscando.doctor">, {{ buscando.doctor }}</template>, preferencia: {{ buscando.preference.toLowerCase() }}.</p>
@@ -75,6 +76,6 @@ function agendar(x, t) {
                 <div v-else class="empty"><b>Sin espacios compatibles en 45 días</b>El paciente seguirá en espera.</div>
             </template>
             <template #footer><Button label="Cerrar" text @click="buscando = null" /></template>
-        </Dialog>
+        </Modal>
     </AppLayout>
 </template>

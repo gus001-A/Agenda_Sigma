@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -73,7 +74,7 @@ async function permiso(rol, mod, v) { await api.post(route('api.permisos.update'
             <div class="body" style="border-top: 1px solid var(--line-2)"><p class="muted small"><i class="pi pi-info-circle" /> Los cambios aplican de inmediato. Además del acceso al módulo, cada rol tiene permisos de acción: Recepción no ve el contenido clínico, el Médico solo ve a sus pacientes y el rol Consulta es de solo lectura.</p></div>
         </div>
 
-        <Dialog :visible="!!u" modal :header="u?.id ? 'Editar usuario' : 'Nuevo usuario'" :style="{ width: '560px' }" :breakpoints="{ '600px': '96vw' }" @update:visible="u = null">
+        <Modal icono="pi pi-user" color="#4f46e5" subtitulo="Rol y acceso al sistema" :visible="!!u" :header="u?.id ? 'Editar usuario' : 'Nuevo usuario'" ancho="560px" @update:visible="u = null">
             <template v-if="u">
                 <div class="field"><label>Nombre</label><InputText v-model="u.name" /></div>
                 <div class="grid2">
@@ -85,6 +86,6 @@ async function permiso(rol, mod, v) { await api.post(route('api.permisos.update'
                 <p v-if="!u.id" class="muted small">Si no defines contraseña, el usuario recibirá un correo para definirla.</p>
             </template>
             <template #footer><Button label="Cancelar" text @click="u = null" /><Button label="Guardar" icon="pi pi-check" @click="guardar" /></template>
-        </Dialog>
+        </Modal>
     </AppLayout>
 </template>

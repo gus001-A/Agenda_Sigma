@@ -50,7 +50,8 @@ const abrirPortal = async (id) => { const c = await api.get(route('api.citas.sho
                         <div class="bubble" :class="{ sms: sel.channel === 'SMS', mail: sel.channel === 'Correo electrónico' }">{{ sel.body }}</div>
                         <p v-if="sel.error" class="note err small">{{ sel.error }}</p>
                         <div v-if="sel.active" class="row">
-                            <Button label="Abrir como paciente" icon="pi pi-mobile" size="small" @click="abrirPortal(sel.appointment_id)" />
+                            <Button v-if="puede('cita')" label="WhatsApp / SMS" icon="pi pi-whatsapp" size="small" severity="success" @click="ui.abrir('mensaje', { cita: { id: sel.appointment_id, patient: sel.patient } })" />
+                            <Button label="Abrir como paciente" icon="pi pi-mobile" size="small" severity="secondary" outlined @click="abrirPortal(sel.appointment_id)" />
                             <Button label="Ver cita" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrirCita(sel.appointment_id)" />
                         </div>
                     </div>

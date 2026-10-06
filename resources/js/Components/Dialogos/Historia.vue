@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -34,7 +35,7 @@ async function solicitar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal :header="h ? 'Historia clínica: ' + h.patient : 'Historia clínica'" :style="{ width: '860px' }" :breakpoints="{ '900px': '96vw' }">
+    <Modal icono="pi pi-file-edit" color="#0891b2" subtitulo="Información capturada por el paciente antes de la consulta" v-model:visible="visible" :header="h ? 'Historia clínica: ' + h.patient : 'Historia clínica'" ancho="860px">
         <template v-if="h && !pidiendo"><HistoriaContenido :resumen="h.resumen" :secciones="h.secciones" :estado="h.hc_status" /></template>
         <template v-else-if="pidiendo">
             <div class="field"><label for="ru">¿Qué información necesitas?</label><Textarea id="ru" v-model="solicitud" rows="3" placeholder="Ej. adjuntar resonancia reciente, aclarar dosis de medicamento" /></div>
@@ -54,5 +55,5 @@ async function solicitar() {
                 <Button label="Cerrar" severity="secondary" outlined @click="ui.cerrar()" />
             </template>
         </template>
-    </Dialog>
+    </Modal>
 </template>

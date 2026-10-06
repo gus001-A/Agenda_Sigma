@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -18,7 +19,7 @@ async function quitar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Bloqueo de agenda" :style="{ width: '520px' }" :breakpoints="{ '560px': '96vw' }">
+    <Modal icono="pi pi-lock" color="#64748b" v-model:visible="visible" header="Bloqueo de agenda" ancho="520px">
         <dl v-if="b" class="kv">
             <dt>Tipo</dt><dd><b style="font-weight: 500">{{ b.type }}</b></dd>
             <dt>Aplica a</dt><dd>{{ b.target }}</dd>
@@ -31,5 +32,5 @@ async function quitar() {
             <Button v-if="puede('bloqueo') && b" label="Quitar bloqueo" icon="pi pi-trash" severity="danger" outlined @click="quitar" />
             <Button label="Cerrar" severity="secondary" outlined @click="ui.cerrar()" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

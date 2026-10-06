@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -46,7 +47,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Reagendar cita" :style="{ width: '760px' }" :breakpoints="{ '800px': '96vw' }">
+    <Modal icono="pi pi-calendar" color="#2b5480" subtitulo="Se conservan anticipos, respuestas e historial" v-model:visible="visible" header="Reagendar cita" ancho="760px">
         <p class="muted">{{ a.patient }}. Actual: {{ fmtDL(a.date) }} a las {{ a.time }}. Las respuestas de historia clínica y los anticipos se conservan.</p>
         <div class="grid2">
             <div class="field"><label>Médico</label><Select v-model="f.doctor_id" :options="medicos" option-label="name" option-value="id" /></div>
@@ -64,5 +65,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Confirmar nuevo horario" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

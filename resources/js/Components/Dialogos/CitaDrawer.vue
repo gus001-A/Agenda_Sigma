@@ -88,6 +88,7 @@ const p = computed(() => a.value?.patient_info || {});
                 <div class="prog" style="margin-top: 8px"><i :style="{ width: a.progress + '%' }" /></div>
                 <div class="acts" style="margin-top: 10px">
                     <Button v-if="a.acciones.verHistoria" label="Ver historia clínica" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrir('historia', { id: a.id })" />
+                    <Button v-if="a.acciones.reenviar" label="WhatsApp / SMS" icon="pi pi-whatsapp" size="small" severity="success" @click="ui.abrir('mensaje', { cita: a })" />
                     <Button v-if="a.acciones.reenviar" label="Reenviar enlace" icon="pi pi-send" size="small" severity="secondary" outlined @click="accion('api.citas.reenviar')" />
                     <Button v-if="a.acciones.portal" label="Abrir como paciente" icon="pi pi-mobile" size="small" severity="secondary" outlined @click="abrirPortal" />
                     <Button v-if="a.acciones.editar" label="Editar datos" size="small" severity="secondary" outlined @click="ui.abrir('editarCita', { cita: a })" />

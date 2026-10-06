@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -26,7 +27,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Cancelar cita" :style="{ width: '540px' }" :breakpoints="{ '600px': '96vw' }">
+    <Modal icono="pi pi-times-circle" color="#d64545" subtitulo="El horario se libera y se buscan candidatos en espera" v-model:visible="visible" header="Cancelar cita" ancho="540px">
         <p>{{ a.patient }}, {{ fmtDL(a.date) }} a las {{ a.time }} con {{ a.doctor }}.</p>
         <div class="field"><label>Motivo</label><Select v-model="f.reason" :options="page.props.catalogo.motivosCancelacion" /></div>
         <div class="field"><label for="cn-n">Observaciones</label><InputText id="cn-n" v-model="f.notes" /></div>
@@ -37,5 +38,5 @@ async function guardar() {
             <Button label="Conservar cita" text @click="ui.cerrar()" />
             <Button label="Cancelar cita" severity="danger" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

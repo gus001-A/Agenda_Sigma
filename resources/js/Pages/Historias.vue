@@ -24,7 +24,7 @@ const columnas = computed(() => [
     { campo: 'form', titulo: 'Formato', filtro: 'lista', opciones: unicos('form') },
     { campo: 'progress', titulo: 'Avance', ancho: '130px' },
     { campo: 'hc_status', titulo: 'Estado', filtro: 'lista', opciones: Object.keys(ICONOS) },
-    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '170px' },
+    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '200px' },
 ]);
 async function reenviar(a) { const r = await api.post(route('api.citas.reenviar', a.id)); avisar(r.message); refrescar(); }
 async function portal(a) { const c = await api.get(route('api.citas.show', a.id)); window.open(c.portal_url, '_blank'); }
@@ -51,6 +51,7 @@ async function portal(a) { const c = await api.get(route('api.citas.show', a.id)
                 <div class="accs">
                     <Accion v-if="puede('verclinico') && fila.hc_status !== 'Pendiente'" icono="pi pi-file-edit" tip="Ver historia clínica" color="cian" @click="ui.abrir('historia', { id: fila.id })" />
                     <template v-if="['Pendiente', 'En proceso', 'Requiere actualización'].includes(fila.hc_status)">
+                        <Accion v-if="puede('cita')" icono="pi pi-whatsapp" tip="Recordar por WhatsApp / SMS" color="verde" @click="ui.abrir('mensaje', { cita: fila, tipo: 'historia' })" />
                         <Accion v-if="puede('cita')" icono="pi pi-send" tip="Reenviar enlace al paciente" color="rosa" @click="reenviar(fila)" />
                         <Accion icono="pi pi-mobile" tip="Llenar como paciente" color="morado" @click="portal(fila)" />
                     </template>

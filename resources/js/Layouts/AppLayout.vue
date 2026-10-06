@@ -21,6 +21,7 @@ import BloqueoVer from '@/Components/Dialogos/BloqueoVer.vue';
 import Historia from '@/Components/Dialogos/Historia.vue';
 import Liberado from '@/Components/Dialogos/Liberado.vue';
 import NuevaEspera from '@/Components/Dialogos/NuevaEspera.vue';
+import EnviarMensaje from '@/Components/Dialogos/EnviarMensaje.vue';
 
 defineProps({ titulo: String, subtitulo: String });
 const page = usePage();
@@ -70,7 +71,7 @@ watch(() => page.props.flash, (f) => { if (f?.success) avisar(f.success); if (f?
 function salir() {
     abierto.value = null;
     confirm.require({
-        header: 'Cerrar sesión', message: '¿Seguro que quieres salir? Tendrás que iniciar sesión de nuevo para continuar.',
+        header: 'Cerrar sesión', icon: 'pi pi-sign-out', message: '¿Seguro que quieres salir? Tendrás que iniciar sesión de nuevo para continuar.',
         acceptLabel: 'Cerrar sesión', rejectLabel: 'Cancelar', acceptProps: { severity: 'danger' }, rejectProps: { severity: 'secondary', outlined: true },
         accept: () => router.post(route('logout')),
     });
@@ -145,7 +146,7 @@ onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEv
 
     <CitaDrawer />
     <NuevaCita /><Pago /><Cancelar /><Reagendar /><EditarCita /><Finalizar /><Reembolso />
-    <Bloqueo /><BloqueoVer /><Historia /><Liberado /><NuevaEspera />
+    <Bloqueo /><BloqueoVer /><Historia /><Liberado /><NuevaEspera /><EnviarMensaje />
     <ConfirmDialog />
     <Toast position="bottom-right">
         <template #message="{ message }">

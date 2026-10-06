@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ui } from '@/lib/ui';
@@ -26,7 +27,7 @@ async function guardar() {
 </script>
 
 <template>
-    <Dialog v-model:visible="visible" modal header="Registrar anticipo" :style="{ width: '560px' }" :breakpoints="{ '600px': '96vw' }">
+    <Modal icono="pi pi-wallet" color="#e08a1e" subtitulo="El pago queda en el historial y se notifica al paciente" v-model:visible="visible" header="Registrar anticipo" ancho="560px">
         <div class="summary">
             <div><span>Paciente</span><b>{{ a.patient }}</b></div>
             <div><span>Anticipo requerido</span><b>{{ money(a.deposit) }}</b></div>
@@ -48,5 +49,5 @@ async function guardar() {
             <Button label="Cancelar" text @click="ui.cerrar()" />
             <Button label="Registrar pago" icon="pi pi-check" :loading="guardando" @click="guardar" />
         </template>
-    </Dialog>
+    </Modal>
 </template>

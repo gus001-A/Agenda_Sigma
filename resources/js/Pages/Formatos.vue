@@ -1,4 +1,5 @@
 <script setup>
+import Modal from '@/Components/Modal.vue';
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -164,7 +165,7 @@ async function crear() {
             </div>
         </div>
 
-        <Dialog :visible="!!pub" modal header="Publicar nueva versión" :style="{ width: '520px' }" :breakpoints="{ '560px': '96vw' }" @update:visible="pub = null">
+        <Modal icono="pi pi-upload" color="#7c3aed" subtitulo="Las historias contestadas conservan su versión" :visible="!!pub" header="Publicar nueva versión" ancho="520px" @update:visible="pub = null">
             <template v-if="pub">
                 <p>Las citas nuevas usarán esta versión. Las {{ formato.usos }} historias ya respondidas conservarán su versión original.</p>
                 <div class="pills">
@@ -174,9 +175,9 @@ async function crear() {
                 <div class="field"><label for="pv-n">Descripción de los cambios</label><InputText id="pv-n" v-model="pub.notes" placeholder="Ej. se agregó pregunta sobre actividad física" /></div>
             </template>
             <template #footer><Button label="Cancelar" text @click="pub = null" /><Button label="Publicar" @click="publicar" /></template>
-        </Dialog>
+        </Modal>
 
-        <Dialog :visible="!!nuevo" modal header="Nuevo formato clínico" :style="{ width: '560px' }" :breakpoints="{ '600px': '96vw' }" @update:visible="nuevo = null">
+        <Modal icono="pi pi-sliders-h" color="#7c3aed" subtitulo="Después podrás ajustar secciones y campos" :visible="!!nuevo" header="Nuevo formato clínico" ancho="560px" @update:visible="nuevo = null">
             <template v-if="nuevo">
                 <div class="field"><label for="nf-n">Nombre</label><InputText id="nf-n" v-model="nuevo.name" placeholder="Ej. Historia clínica de Cardiología" /></div>
                 <div class="grid2">
@@ -186,6 +187,6 @@ async function crear() {
                 <label class="chk"><Checkbox v-model="nuevo.plantilla" binary />Partir de la plantilla general (datos, motivo, antecedentes, medicamentos, alergias, estudios y consentimiento)</label>
             </template>
             <template #footer><Button label="Cancelar" text @click="nuevo = null" /><Button label="Crear formato" @click="crear" /></template>
-        </Dialog>
+        </Modal>
     </AppLayout>
 </template>
