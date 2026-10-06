@@ -66,21 +66,21 @@ class Catalogo
     ];
 
     public const MODULOS = [
-        ['k' => 'panel', 'l' => 'Panel', 'i' => 'pi pi-th-large', 'g' => 'Operación', 'ruta' => 'panel'],
-        ['k' => 'agenda', 'l' => 'Agenda médica', 'i' => 'pi pi-calendar', 'g' => 'Operación', 'ruta' => 'agenda'],
-        ['k' => 'recepcion', 'l' => 'Recepción del día', 'i' => 'pi pi-desktop', 'g' => 'Operación', 'ruta' => 'recepcion'],
-        ['k' => 'disponibilidad', 'l' => 'Próxima disponibilidad', 'i' => 'pi pi-search', 'g' => 'Operación', 'ruta' => 'disponibilidad'],
-        ['k' => 'espera', 'l' => 'Lista de espera', 'i' => 'pi pi-clock', 'g' => 'Operación', 'ruta' => 'espera'],
-        ['k' => 'espacios', 'l' => 'Quirófanos y espacios', 'i' => 'pi pi-building', 'g' => 'Operación', 'ruta' => 'espacios'],
-        ['k' => 'anticipos', 'l' => 'Anticipos', 'i' => 'pi pi-wallet', 'g' => 'Operación', 'ruta' => 'anticipos'],
-        ['k' => 'notificaciones', 'l' => 'Notificaciones', 'i' => 'pi pi-bell', 'g' => 'Operación', 'ruta' => 'notificaciones'],
-        ['k' => 'historias', 'l' => 'Historias clínicas', 'i' => 'pi pi-file-edit', 'g' => 'Clínico', 'ruta' => 'historias'],
-        ['k' => 'preconsulta', 'l' => 'Preconsulta médica', 'i' => 'pi pi-heart', 'g' => 'Clínico', 'ruta' => 'preconsulta'],
-        ['k' => 'formatos', 'l' => 'Formatos clínicos', 'i' => 'pi pi-sliders-h', 'g' => 'Administración', 'ruta' => 'formatos'],
-        ['k' => 'catalogos', 'l' => 'Catálogos', 'i' => 'pi pi-book', 'g' => 'Administración', 'ruta' => 'catalogos'],
-        ['k' => 'reportes', 'l' => 'Reportes', 'i' => 'pi pi-chart-bar', 'g' => 'Administración', 'ruta' => 'reportes'],
-        ['k' => 'usuarios', 'l' => 'Usuarios y permisos', 'i' => 'pi pi-users', 'g' => 'Administración', 'ruta' => 'usuarios'],
-        ['k' => 'auditoria', 'l' => 'Auditoría', 'i' => 'pi pi-shield', 'g' => 'Administración', 'ruta' => 'auditoria'],
+        ['k' => 'panel', 'l' => 'Panel', 'i' => 'pi pi-th-large', 'g' => 'Operación', 'ruta' => 'panel', 'c' => '#173a5f'],
+        ['k' => 'agenda', 'l' => 'Agenda médica', 'i' => 'pi pi-calendar', 'g' => 'Operación', 'ruta' => 'agenda', 'c' => '#1f9e86'],
+        ['k' => 'recepcion', 'l' => 'Recepción del día', 'i' => 'pi pi-desktop', 'g' => 'Operación', 'ruta' => 'recepcion', 'c' => '#2b5480'],
+        ['k' => 'disponibilidad', 'l' => 'Próxima disponibilidad', 'i' => 'pi pi-search', 'g' => 'Operación', 'ruta' => 'disponibilidad', 'c' => '#0e7490'],
+        ['k' => 'espera', 'l' => 'Lista de espera', 'i' => 'pi pi-clock', 'g' => 'Operación', 'ruta' => 'espera', 'c' => '#e08a1e'],
+        ['k' => 'espacios', 'l' => 'Quirófanos y espacios', 'i' => 'pi pi-building', 'g' => 'Operación', 'ruta' => 'espacios', 'c' => '#6b4bc9'],
+        ['k' => 'anticipos', 'l' => 'Anticipos', 'i' => 'pi pi-wallet', 'g' => 'Operación', 'ruta' => 'anticipos', 'c' => '#16a34a'],
+        ['k' => 'notificaciones', 'l' => 'Notificaciones', 'i' => 'pi pi-bell', 'g' => 'Operación', 'ruta' => 'notificaciones', 'c' => '#db2777'],
+        ['k' => 'historias', 'l' => 'Historias clínicas', 'i' => 'pi pi-file-edit', 'g' => 'Clínico', 'ruta' => 'historias', 'c' => '#0891b2'],
+        ['k' => 'preconsulta', 'l' => 'Preconsulta médica', 'i' => 'pi pi-heart', 'g' => 'Clínico', 'ruta' => 'preconsulta', 'c' => '#d64545'],
+        ['k' => 'formatos', 'l' => 'Formatos clínicos', 'i' => 'pi pi-sliders-h', 'g' => 'Administración', 'ruta' => 'formatos', 'c' => '#7c3aed'],
+        ['k' => 'catalogos', 'l' => 'Catálogos', 'i' => 'pi pi-book', 'g' => 'Administración', 'ruta' => 'catalogos', 'c' => '#1c6b78'],
+        ['k' => 'reportes', 'l' => 'Reportes', 'i' => 'pi pi-chart-bar', 'g' => 'Administración', 'ruta' => 'reportes', 'c' => '#ea580c'],
+        ['k' => 'usuarios', 'l' => 'Usuarios y permisos', 'i' => 'pi pi-users', 'g' => 'Administración', 'ruta' => 'usuarios', 'c' => '#4f46e5'],
+        ['k' => 'auditoria', 'l' => 'Auditoría', 'i' => 'pi pi-shield', 'g' => 'Administración', 'ruta' => 'auditoria', 'c' => '#475569'],
     ];
 
     public const PERMISOS_DEFAULT = [

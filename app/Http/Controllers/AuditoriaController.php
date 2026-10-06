@@ -11,14 +11,21 @@ class AuditoriaController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        $q = trim((string) $request->q);
+        // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
+        $f = collect($request->input('f', []))->only(['fecha', 'user', 'action', 'detail', 'ip'])->filter(fn ($v) => $v !== null && $v !== '');
+        $porPagina = in_array((int) $request->per_page, [10, 15], true) ? (int) $request->per_page : 10;
 
         return Inertia::render('Auditoria', [
-            'q' => $q,
+            'filtros' => (object) $f->all(),
+            'acciones' => AuditLog::distinct()->orderBy('action')->pluck('action'),
             'registros' => AuditLog::query()
-                ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('user_name', 'like', "%{$q}%")->orWhere('action', 'like', "%{$q}%")->orWhere('detail', 'like', "%{$q}%")))
-                ->latest('created_at')->latest('id')->paginate(50)->withQueryString()
-                ->through(fn ($l) => ['id' => $l->id, 'at' => $l->created_at->toIso8601String(), 'user' => $l->user_name, 'action' => $l->action,
+                ->when($f->get('fecha'), fn ($q, $v) => $q->whereRaw("DATE_FORMAT(created_at, '%d/%m/%Y %H:%i') like ?", ["%{$v}%"]))
+                ->when($f->get('user'), fn ($q, $v) => $q->where('user_name', 'like', "%{$v}%"))
+                ->when($f->get('action'), fn ($q, $v) => $q->where('action', $v))
+                ->when($f->get('detail'), fn ($q, $v) => $q->where('detail', 'like', "%{$v}%"))
+                ->when($f->get('ip'), fn ($q, $v) => $q->where('ip', 'like', "%{$v}%"))
+                ->latest('created_at')->latest('id')->paginate($porPagina)->withQueryString()
+                ->through(fn ($l) => ['id' => $l->id, 'fecha' => $l->created_at->format('d/m/Y H:i'), 'user' => $l->user_name, 'action' => $l->action,
                     'detail' => $l->detail, 'appointment_id' => $l->appointment_id, 'ip' => $l->ip]),
         ]);
     }

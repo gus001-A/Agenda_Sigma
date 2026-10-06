@@ -5,15 +5,16 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import Fecha from '@/Components/Fecha.vue';
 import Hora from '@/Components/Hora.vue';
+import TablaDatos from '@/Components/TablaDatos.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
-import { money, fmtDS, fmtDL, DIAS, DSH, CLASE_ESTADO, hoyISO } from '@/lib/util';
+import { money, fmtDS, fmtDL, DIAS, DSH, CLASE_ESTADO, hoyISO, initials } from '@/lib/util';
 
-const props = defineProps({ tab: String, formatos: Array, especialidades: Array, medicos: Array, espacios: Array, pacientes: Object, q: String });
+const props = defineProps({ tab: String, formatos: Array, especialidades: Array, medicos: Array, espacios: Array, pacientes: Object, filtros: Object });
 const page = usePage();
 const { puede } = usePermisos();
 const op = computed(() => page.props.opciones);
-const tabs = [['esp', 'Especialidades'], ['med', 'Médicos y horarios'], ['rec', 'Consultorios y espacios'], ['pac', 'Pacientes']];
+const tabs = [['esp', 'Especialidades', 'pi pi-bookmark'], ['med', 'Médicos y horarios', 'pi pi-user'], ['rec', 'Consultorios y espacios', 'pi pi-building'], ['pac', 'Pacientes', 'pi pi-id-card']];
 const irTab = (t) => router.get(route('catalogos'), { tab: t }, { preserveScroll: true });
 const diasOrden = [1, 2, 3, 4, 5, 6, 0];
 
@@ -56,9 +57,6 @@ async function guardarRec() {
 
 // ---------- paciente ----------
 const pac = ref(null);
-const busqueda = ref(props.q || '');
-let tq = null;
-watch(busqueda, (v) => { clearTimeout(tq); tq = setTimeout(() => filtrar('catalogos', { tab: 'pac', q: v }), 300); });
 const abrirPac = (p) => { pac.value = p ? { id: p.id, sigma_id: p.sigma_id, name: p.name, birth_date: p.birth_date, phone: p.phone, email: p.email } : { name: '', birth_date: null, phone: '', email: '' }; };
 async function guardarPac() {
     try {
@@ -68,88 +66,121 @@ async function guardarPac() {
 }
 const historial = ref(null);
 async function verHistorial(p) { historial.value = await api.get(route('api.pacientes.historial', p.id)); }
-const pagina = (e) => router.get(route('catalogos'), { tab: 'pac', q: props.q, page: e.page + 1 }, { preserveScroll: true, preserveState: true });
+const cargando = ref(false);
+function cambioPac({ pagina, filas, filtros }) {
+    cargando.value = true;
+    router.get(route('catalogos'), { tab: 'pac', f: filtros, page: pagina, per_page: filas }, { preserveState: true, preserveScroll: true, replace: true, onFinish: () => (cargando.value = false) });
+}
+
+// ---------- columnas de las tablas ----------
+const leer = (x, k) => k.split('.').reduce((o, y) => o?.[y], x);
+const unicos = (l, k) => [...new Set((l || []).map((x) => leer(x, k)).filter(Boolean))].sort();
+const ESTATUS = ['Activo', 'Inactivo'];
+const colEsp = computed(() => [
+    { campo: 'name', titulo: 'Especialidad', filtro: 'texto', ancho: '260px' },
+    { campo: 'doctors_count', titulo: 'Médicos', alinear: 'right', ancho: '90px' },
+    { campo: 'default_cost', titulo: 'Costo base', alinear: 'right' },
+    { campo: 'first_form.name', titulo: 'Primera consulta', filtro: 'lista', opciones: unicos(props.especialidades, 'first_form.name') },
+    { campo: 'sub_form.name', titulo: 'Subsecuente', filtro: 'lista', opciones: unicos(props.especialidades, 'sub_form.name') },
+    { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ['Activa', 'Inactiva'], ancho: '120px' },
+    { campo: 'acc', titulo: '', ordenar: false, ancho: '60px' },
+]);
+const filasEsp = computed(() => (props.especialidades || []).map((e) => ({ ...e, estatus: e.active ? 'Activa' : 'Inactiva' })));
+const filasMed = computed(() => (props.medicos || []).map((d) => ({ ...d, estatus: d.active ? 'Activo' : 'Inactivo', horario: d.start_time + ' a ' + d.end_time, especialidad: d.specialty?.name, consultorio: d.room?.name || '—', dur: d.duration + ' min' })));
+const colMed = computed(() => [
+    { campo: 'name', titulo: 'Médico', filtro: 'texto', ancho: '240px' },
+    { campo: 'especialidad', titulo: 'Especialidad', filtro: 'lista', opciones: unicos(filasMed.value, 'especialidad') },
+    { campo: 'dias', titulo: 'Días', ordenar: false, ancho: '170px' },
+    { campo: 'horario', titulo: 'Horario', filtro: 'texto', ancho: '140px' },
+    { campo: 'dur', titulo: 'Duración', filtro: 'lista', opciones: unicos(filasMed.value, 'dur') },
+    { campo: 'cost', titulo: 'Costo', alinear: 'right' },
+    { campo: 'anticipo', titulo: 'Anticipo', alinear: 'right', ordenar: false },
+    { campo: 'consultorio', titulo: 'Consultorio', filtro: 'lista', opciones: unicos(filasMed.value, 'consultorio') },
+    { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ESTATUS },
+    { campo: 'acc', titulo: '', ordenar: false, ancho: '140px' },
+]);
+const filasRec = computed(() => (props.espacios || []).map((r) => ({ ...r, estatus: r.active ? 'Activo' : 'Inactivo', horario: r.opens_at + ' a ' + r.closes_at })));
+const colRec = computed(() => [
+    { campo: 'name', titulo: 'Nombre', filtro: 'texto', ancho: '230px' },
+    { campo: 'type', titulo: 'Tipo', filtro: 'lista', opciones: unicos(filasRec.value, 'type') },
+    { campo: 'location', titulo: 'Ubicación', filtro: 'lista', opciones: unicos(filasRec.value, 'location') },
+    { campo: 'capacity', titulo: 'Capacidad', alinear: 'right', ancho: '100px' },
+    { campo: 'horario', titulo: 'Horario', filtro: 'texto' },
+    { campo: 'cost', titulo: 'Costo', alinear: 'right' },
+    { campo: 'equipment', titulo: 'Equipamiento', filtro: 'texto' },
+    { campo: 'responsible', titulo: 'Responsable', filtro: 'lista', opciones: unicos(filasRec.value, 'responsible') },
+    { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ESTATUS },
+    { campo: 'acc', titulo: '', ordenar: false, ancho: '60px' },
+]);
+const colPac = [
+    { campo: 'sigma_id', titulo: 'ID SIGMA24', filtro: 'texto', ancho: '130px' },
+    { campo: 'name', titulo: 'Nombre', filtro: 'texto', ancho: '230px' },
+    { campo: 'age', titulo: 'Edad', alinear: 'right', ancho: '80px' },
+    { campo: 'phone', titulo: 'Teléfono', filtro: 'texto', ancho: '150px' },
+    { campo: 'email', titulo: 'Correo', filtro: 'texto' },
+    { campo: 'citas', titulo: 'Citas', alinear: 'right', ancho: '80px' },
+    { campo: 'ultima', titulo: 'Última historia clínica', ancho: '190px' },
+    { campo: 'acc', titulo: 'Acciones', ancho: '130px' },
+];
+const ICONO_RECURSO = { Consultorio: 'pi pi-desktop', 'Quirófano': 'pi pi-heart', 'Sala de procedimientos': 'pi pi-briefcase', 'Sala de juntas': 'pi pi-users', 'Habitación': 'pi pi-home', 'Sala de rehabilitación': 'pi pi-bolt' };
+const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala de procedimientos': '#6b4bc9', 'Sala de juntas': '#0e7490', 'Habitación': '#16a34a', 'Sala de rehabilitación': '#e08a1e' };
 </script>
 
 <template>
-    <AppLayout titulo="Catálogos" subtitulo="Especialidades, médicos, espacios y pacientes">
-        <Tabs :value="tab" style="margin-bottom: 16px"><TabList><Tab v-for="[k, l] in tabs" :key="k" :value="k" @click="irTab(k)">{{ l }}</Tab></TabList></Tabs>
+    <AppLayout titulo="Catálogos" subtitulo="Especialidades, médicos y horarios, espacios y pacientes">
+        <template #acciones>
+            <Button v-if="tab === 'esp' && puede('config')" label="Nueva especialidad" icon="pi pi-plus" severity="secondary" outlined @click="abrirEsp()" />
+            <Button v-if="tab === 'med' && puede('config')" label="Nuevo médico" icon="pi pi-user-plus" severity="secondary" outlined @click="abrirMed()" />
+            <Button v-if="tab === 'rec' && puede('operativo')" label="Nuevo espacio" icon="pi pi-plus" severity="secondary" outlined @click="abrirRec()" />
+            <Button v-if="tab === 'pac' && puede('cita')" label="Alta de paciente" icon="pi pi-user-plus" severity="secondary" outlined @click="abrirPac()" />
+        </template>
+        <Tabs :value="tab"><TabList><Tab v-for="[k, l, i] in tabs" :key="k" :value="k" @click="irTab(k)"><i :class="i" style="margin-right: 7px" />{{ l }}</Tab></TabList></Tabs>
 
         <!-- ESPECIALIDADES -->
-        <template v-if="tab === 'esp'">
-            <div class="vh"><div class="sp" /><Button v-if="puede('config')" label="Nueva especialidad" icon="pi pi-plus" @click="abrirEsp()" /></div>
-            <div class="card tbl-wrap"><table class="tbl">
-                <thead><tr><th>Especialidad</th><th>Médicos</th><th class="num">Costo base</th><th>Primera consulta</th><th>Subsecuente</th><th>Estatus</th><th></th></tr></thead>
-                <tbody><tr v-for="e in especialidades" :key="e.id">
-                    <td><b style="font-weight: 500">{{ e.name }}</b><div class="muted small">{{ e.description }}</div></td>
-                    <td>{{ e.doctors_count }}</td><td class="num">{{ money(e.default_cost) }}</td>
-                    <td class="small">{{ e.first_form?.name || '—' }}</td><td class="small">{{ e.sub_form?.name || '—' }}</td>
-                    <td><span class="chip" :class="e.active ? 'hcom' : 's-aten'">{{ e.active ? 'Activa' : 'Inactiva' }}</span></td>
-                    <td><Button v-if="puede('config')" label="Editar" size="small" severity="secondary" outlined @click="abrirEsp(e)" /></td>
-                </tr></tbody>
-            </table></div>
-        </template>
+        <TablaDatos v-if="tab === 'esp'" :filas="filasEsp" :columnas="colEsp">
+            <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="hic" style="--c: #0891b2"><i class="pi pi-bookmark" /></span><span><b style="font-weight: 600">{{ fila.name }}</b><div class="muted small">{{ fila.description }}</div></span></span></template>
+            <template #c-default_cost="{ fila }">{{ money(fila.default_cost) }}</template>
+            <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-acc="{ fila }"><Button v-if="puede('config')" v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="info" text rounded @click="abrirEsp(fila)" /></template>
+        </TablaDatos>
 
         <!-- MÉDICOS -->
-        <template v-else-if="tab === 'med'">
-            <div class="vh"><p class="muted">La agenda se genera automáticamente a partir de estos horarios.</p><div class="sp" /><Button v-if="puede('config')" label="Nuevo médico" icon="pi pi-plus" @click="abrirMed()" /></div>
-            <div class="card tbl-wrap"><table class="tbl">
-                <thead><tr><th>Médico</th><th>Especialidad</th><th>Días</th><th>Horario</th><th>Duración</th><th class="num">Costo</th><th class="num">Anticipo</th><th>Consultorio</th><th>Estatus</th><th></th></tr></thead>
-                <tbody><tr v-for="d in medicos" :key="d.id">
-                    <td><b style="font-weight: 500">{{ d.name }}</b><div class="muted small">{{ d.phone }}</div></td>
-                    <td>{{ d.specialty?.name }}</td>
-                    <td>{{ [...d.days].sort((a, b) => (a || 7) - (b || 7)).map((x) => DSH[x]).join(', ') }}</td>
-                    <td>{{ d.start_time }} a {{ d.end_time }}</td><td>{{ d.duration }} min</td>
-                    <td class="num">{{ money(d.cost) }}</td><td class="num">{{ anticipo(d) }}</td><td>{{ d.room?.name }}</td>
-                    <td><span class="chip" :class="d.active ? 'hcom' : 's-aten'">{{ d.active ? 'Activo' : 'Inactivo' }}</span></td>
-                    <td><Button v-if="puede('config')" label="Configurar" size="small" severity="secondary" outlined @click="abrirMed(d)" /></td>
-                </tr></tbody>
-            </table></div>
-        </template>
+        <TablaDatos v-else-if="tab === 'med'" :filas="filasMed" :columnas="colMed">
+            <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="avatar" style="width: 30px; height: 30px; font-size: 11px">{{ initials(fila.name) }}</span><span><b style="font-weight: 600">{{ fila.name }}</b><div class="muted small"><i class="pi pi-phone" style="font-size: 10px" /> {{ fila.phone }}</div></span></span></template>
+            <template #c-dias="{ fila }"><div class="row" style="gap: 3px"><span v-for="x in diasOrden" :key="x" class="dia" :class="{ on: fila.days.includes(x) }">{{ DSH[x][0] }}</span></div></template>
+            <template #c-cost="{ fila }">{{ money(fila.cost) }}</template>
+            <template #c-anticipo="{ fila }"><span :style="{ color: fila.deposit_amount ? '#a86717' : '' }">{{ anticipo(fila) }}</span></template>
+            <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-acc="{ fila }"><Button v-if="puede('config')" label="Configurar" icon="pi pi-cog" size="small" severity="secondary" outlined @click="abrirMed(fila)" /></template>
+        </TablaDatos>
 
         <!-- ESPACIOS -->
-        <template v-else-if="tab === 'rec'">
-            <div class="vh"><div class="sp" /><Button v-if="puede('operativo')" label="Nuevo espacio" icon="pi pi-plus" @click="abrirRec()" /></div>
-            <div class="card tbl-wrap"><table class="tbl">
-                <thead><tr><th>Nombre</th><th>Tipo</th><th>Ubicación</th><th>Capacidad</th><th>Horario</th><th class="num">Costo</th><th>Equipamiento</th><th>Responsable</th><th>Estatus</th><th></th></tr></thead>
-                <tbody><tr v-for="r in espacios" :key="r.id">
-                    <td><b style="font-weight: 500">{{ r.name }}</b><div v-if="r.rules" class="muted small">{{ r.rules }}</div></td>
-                    <td>{{ r.type }}</td><td>{{ r.location }}</td><td>{{ r.capacity }}</td><td>{{ r.opens_at }} a {{ r.closes_at }}</td>
-                    <td class="num">{{ r.cost ? money(r.cost) : '—' }}</td><td class="small">{{ r.equipment }}</td><td>{{ r.responsible }}</td>
-                    <td><span class="chip" :class="r.active ? 'hcom' : 's-aten'">{{ r.active ? 'Activo' : 'Inactivo' }}</span></td>
-                    <td><Button v-if="puede('operativo')" label="Editar" size="small" severity="secondary" outlined @click="abrirRec(r)" /></td>
-                </tr></tbody>
-            </table></div>
-        </template>
+        <TablaDatos v-else-if="tab === 'rec'" :filas="filasRec" :columnas="colRec">
+            <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="hic" :style="{ '--c': COLOR_RECURSO[fila.type] || '#64748b' }"><i :class="ICONO_RECURSO[fila.type] || 'pi pi-box'" /></span><span><b style="font-weight: 600">{{ fila.name }}</b><div v-if="fila.rules" class="muted small">{{ fila.rules }}</div></span></span></template>
+            <template #c-cost="{ fila }">{{ fila.cost ? money(fila.cost) : '—' }}</template>
+            <template #c-equipment="{ fila }"><span class="small">{{ fila.equipment }}</span></template>
+            <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-acc="{ fila }"><Button v-if="puede('operativo')" v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="info" text rounded @click="abrirRec(fila)" /></template>
+        </TablaDatos>
 
-        <!-- PACIENTES -->
-        <template v-else>
-            <div class="vh">
-                <IconField style="max-width: 340px; flex: 1"><InputIcon class="pi pi-search" /><InputText v-model="busqueda" placeholder="Buscar por nombre o ID SIGMA24" fluid /></IconField>
-                <div class="sp" />
-                <Button v-if="puede('cita')" label="Alta de paciente" icon="pi pi-plus" @click="abrirPac()" />
-            </div>
-            <div class="card tbl-wrap"><table class="tbl">
-                <thead><tr><th>ID SIGMA24</th><th>Nombre</th><th>Edad</th><th>Teléfono</th><th>Correo</th><th class="num">Citas</th><th>Última historia clínica</th><th></th></tr></thead>
-                <tbody>
-                    <tr v-for="p in pacientes.data" :key="p.id">
-                        <td><code>{{ p.sigma_id }}</code></td><td>{{ p.name }}</td><td>{{ p.age }}</td><td>{{ p.phone }}</td><td class="small">{{ p.email }}</td>
-                        <td class="num">{{ p.citas }}</td>
-                        <td><template v-if="p.ultima">{{ fmtDS(p.ultima.date) }} <span class="muted small">{{ p.ultima.specialty }}</span></template><span v-else class="muted">—</span></td>
-                        <td style="white-space: nowrap">
-                            <Button label="Citas" size="small" text @click="verHistorial(p)" />
-                            <template v-if="puede('cita')">
-                                <Button label="Agendar" size="small" severity="secondary" outlined @click="ui.abrir('nuevaCita', { patient_id: p.id })" />
-                                <Button label="Editar" size="small" text @click="abrirPac(p)" />
-                            </template>
-                        </td>
-                    </tr>
-                    <tr v-if="!pacientes.data.length"><td colspan="8"><div class="empty"><b>Sin pacientes</b></div></td></tr>
-                </tbody>
-            </table></div>
-            <Paginator v-if="pacientes.total > pacientes.per_page" :rows="pacientes.per_page" :total-records="pacientes.total" :first="(pacientes.current_page - 1) * pacientes.per_page" @page="pagina" />
-            <p class="muted small" style="margin-top: 8px">Los pacientes se vinculan por el identificador único de SIGMA24 para evitar duplicados.</p>
-        </template>
+        <!-- PACIENTES (filtrado en el servidor) -->
+        <TablaDatos v-else :filas="pacientes.data" :columnas="colPac" lazy :total="pacientes.total" :primero="(pacientes.current_page - 1) * pacientes.per_page"
+            :por-pagina="pacientes.per_page" :filtros-iniciales="filtros || {}" :cargando="cargando" @cambio="cambioPac">
+            <template #c-sigma_id="{ fila }"><code>{{ fila.sigma_id }}</code></template>
+            <template #c-name="{ fila }"><b style="font-weight: 600">{{ fila.name }}</b></template>
+            <template #c-email="{ fila }"><span class="small">{{ fila.email }}</span></template>
+            <template #c-citas="{ fila }"><span class="chip plain s-agen">{{ fila.citas }}</span></template>
+            <template #c-ultima="{ fila }"><template v-if="fila.ultima">{{ fmtDS(fila.ultima.date) }} <span class="muted small">{{ fila.ultima.specialty }}</span></template><span v-else class="muted">—</span></template>
+            <template #c-acc="{ fila }">
+                <div class="row" style="gap: 2px; flex-wrap: nowrap">
+                    <Button v-tooltip.top="'Ver citas'" icon="pi pi-history" size="small" severity="info" text rounded @click="verHistorial(fila)" />
+                    <template v-if="puede('cita')">
+                        <Button v-tooltip.top="'Agendar'" icon="pi pi-calendar-plus" size="small" severity="success" text rounded @click="ui.abrir('nuevaCita', { patient_id: fila.id })" />
+                        <Button v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="abrirPac(fila)" />
+                    </template>
+                </div>
+            </template>
+        </TablaDatos>
 
         <!-- Diálogos -->
         <Dialog :visible="!!esp" modal :header="esp?.id ? 'Editar especialidad' : 'Nueva especialidad'" :style="{ width: '600px' }" :breakpoints="{ '640px': '96vw' }" @update:visible="esp = null">

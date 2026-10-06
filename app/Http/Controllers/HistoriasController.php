@@ -23,7 +23,7 @@ class HistoriasController extends Controller
         $conteo = (clone $base)->selectRaw('hc_status, count(*) as n')->groupBy('hc_status')->pluck('n', 'hc_status');
         $lista = (clone $base)->with('patient:id,name', 'doctor:id,name', 'form', 'files:id,appointment_id,field_id')
             ->when($estado, fn ($q) => $q->where('hc_status', $estado))
-            ->orderBy('date')->orderBy('time')->limit(150)->get()
+            ->orderBy('date')->orderBy('time')->limit(600)->get()
             ->map(fn ($a) => Presentador::cita($a) + ['form' => $a->form?->name, 'version' => $a->form_version, 'progress' => Formatos::avance($a)]);
 
         return Inertia::render('Historias', [

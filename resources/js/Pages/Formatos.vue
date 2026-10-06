@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Segmento from '@/Components/Segmento.vue';
 import CampoFormulario from '@/Components/CampoFormulario.vue';
 import { usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
@@ -98,7 +99,7 @@ async function crear() {
                         <span v-if="sucio" class="chip hpen">Cambios sin publicar</span>
                         <label class="chk"><Checkbox v-model="meta.active" binary :disabled="!cfg" @change="guardarMeta" />Activo</label>
                         <div style="flex: 1" />
-                        <SelectButton v-model="vista" :options="[{ l: 'Editar', v: false }, { l: 'Vista previa', v: true }]" option-label="l" option-value="v" :allow-empty="false" />
+                        <Segmento v-model="vista" :opciones="[{ l: 'Editar', v: false, i: 'pi pi-pencil' }, { l: 'Vista previa', v: true, i: 'pi pi-mobile' }]" />
                         <template v-if="cfg && sucio">
                             <Button label="Descartar" text @click="descartar" />
                             <Button label="Publicar versión" icon="pi pi-upload" @click="pub = { mayor: false, notes: '' }" />

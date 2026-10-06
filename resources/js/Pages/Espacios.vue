@@ -76,14 +76,16 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
 
 <template>
     <AppLayout titulo="Quirófanos y espacios" subtitulo="Reservación de recursos físicos">
+        <template #acciones>
+            <Button v-if="puede('espacio')" label="Nueva reservación" icon="pi pi-plus" severity="secondary" outlined @click="nueva()" />
+            <Button v-if="puede('bloqueo')" label="Bloquear espacio" icon="pi pi-ban" severity="secondary" outlined @click="ui.abrir('bloqueo', { scope: 'resource', date: fecha })" />
+        </template>
         <div class="vh">
             <DateNav :fecha="fecha" @cambiar="ir({ fecha: $event })" />
             <div class="sp" />
             <Select :model-value="tipo" :options="page.props.catalogo.tiposRecurso" placeholder="Todos los espacios" show-clear @update:model-value="ir({ tipo: $event })" />
-            <Button v-if="puede('bloqueo')" label="Bloquear espacio" icon="pi pi-ban" severity="secondary" outlined @click="ui.abrir('bloqueo', { scope: 'resource', date: fecha })" />
-            <Button v-if="puede('espacio')" label="Nueva reservación" icon="pi pi-plus" @click="nueva()" />
         </div>
-        <p class="muted small" style="margin-bottom: 10px">Haz clic en un espacio vacío de la línea de tiempo para reservar a esa hora. Antes de guardar se validan disponibilidad, horario, bloqueos y agenda del médico.</p>
+        <p class="muted small"><i class="pi pi-info-circle" /> Haz clic en un espacio vacío de la línea de tiempo para reservar a esa hora. Antes de guardar se validan disponibilidad, horario, bloqueos y agenda del médico.</p>
         <div class="tl">
             <div class="tl-in">
                 <div class="tl-row tl-head">

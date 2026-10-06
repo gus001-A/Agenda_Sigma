@@ -19,7 +19,7 @@ class NotificacionesController extends Controller
     {
         return Inertia::render('Notificaciones', [
             'total' => PatientMessage::count(),
-            'mensajes' => PatientMessage::with('appointment:id,patient_id,status', 'appointment.patient:id,name')->latest('sent_at')->latest('id')->limit(60)->get()
+            'mensajes' => PatientMessage::with('appointment:id,patient_id,status', 'appointment.patient:id,name')->latest('sent_at')->latest('id')->limit(500)->get()
                 ->map(fn ($m) => ['id' => $m->id, 'appointment_id' => $m->appointment_id, 'patient' => $m->appointment?->patient?->name,
                     'active' => $m->appointment && ! in_array($m->appointment->status, ['Cancelada', 'Reagendada', 'Atendida'], true),
                     'channel' => $m->channel, 'kind' => Catalogo::ETIQUETAS_MENSAJE[$m->kind] ?? $m->kind, 'body' => $m->body,

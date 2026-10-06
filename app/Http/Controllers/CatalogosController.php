@@ -38,11 +38,16 @@ class CatalogosController extends Controller
         } elseif ($tab === 'rec') {
             $data['espacios'] = Resource::orderBy('id')->get();
         } else {
-            $q = trim((string) $request->q);
-            $data['q'] = $q;
+            // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
+            $f = collect($request->input('f', []))->only(['sigma_id', 'name', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
+            $data['filtros'] = (object) $f->all();
+            $porPagina = in_array((int) $request->per_page, [10, 15], true) ? (int) $request->per_page : 10;
             $data['pacientes'] = Patient::query()
-                ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('name', 'like', "%{$q}%")->orWhere('sigma_id', 'like', "%{$q}%")))
-                ->withCount('appointments')->orderBy('name')->paginate(25)->withQueryString()
+                ->when($f->get('sigma_id'), fn ($w, $v) => $w->where('sigma_id', 'like', "%{$v}%"))
+                ->when($f->get('name'), fn ($w, $v) => $w->where('name', 'like', "%{$v}%"))
+                ->when($f->get('phone'), fn ($w, $v) => $w->whereRaw("REPLACE(phone, ' ', '') like ?", ['%'.str_replace(' ', '', $v).'%']))
+                ->when($f->get('email'), fn ($w, $v) => $w->where('email', 'like', "%{$v}%"))
+                ->withCount('appointments')->orderBy('name')->paginate($porPagina)->withQueryString()
                 ->through(function (Patient $p) {
                     $ultima = Appointment::with('specialty:id,name')->where('patient_id', $p->id)->whereIn('hc_status', ['Completado', 'Revisado'])->orderByDesc('date')->first();
 

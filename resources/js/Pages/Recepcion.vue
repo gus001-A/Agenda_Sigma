@@ -1,19 +1,42 @@
 <script setup>
-import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Segmento from '@/Components/Segmento.vue';
 import Chip from '@/Components/Chip.vue';
 import DateNav from '@/Components/DateNav.vue';
+import Kpi from '@/Components/Kpi.vue';
+import TablaDatos from '@/Components/TablaDatos.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { filtrar } from '@/lib/api';
-import { fmtDL } from '@/lib/util';
 
 const props = defineProps({ fecha: String, filtros: Object, filas: Array, inactivas: Array });
-const page = usePage();
 const { puede } = usePermisos();
-const medicos = computed(() => page.props.opciones.medicos);
-const ir = (c) => filtrar('recepcion', { fecha: props.fecha, doc: props.filtros.doc, ocultar: props.filtros.ocultar ? 1 : null, ...c });
-function clickFila(r) { if (r.appt) ui.abrirCita(r.appt.id); }
+const vista = ref('agenda');
+const ir = (c) => filtrar('recepcion', { fecha: props.fecha, ocultar: props.filtros.ocultar ? 1 : null, ...c });
+const unicos = (l, k) => [...new Set(l.map((x) => x[k]).filter(Boolean))].sort();
+
+const filas = computed(() => props.filas.map((r, i) => ({
+    ...r, _id: i, paciente: r.appt?.patient || '', hc: r.appt?.hc_status || '', anticipo: r.appt?.deposit_state || '',
+})));
+const columnas = computed(() => [
+    { campo: 'time', titulo: 'Hora', filtro: 'texto', ancho: '90px' },
+    { campo: 'paciente', titulo: 'Paciente', filtro: 'texto', ancho: '200px' },
+    { campo: 'specialty', titulo: 'Especialidad', filtro: 'lista', opciones: unicos(filas.value, 'specialty') },
+    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos(filas.value, 'doctor'), ancho: '200px' },
+    { campo: 'state', titulo: 'Estado', filtro: 'lista', opciones: unicos(filas.value, 'state') },
+    { campo: 'hc', titulo: 'Historia clínica', filtro: 'lista', opciones: unicos(filas.value, 'hc') },
+    { campo: 'anticipo', titulo: 'Anticipo', filtro: 'lista', opciones: unicos(filas.value, 'anticipo') },
+    { campo: 'accion', titulo: 'Acción', ordenar: false, ancho: '120px' },
+]);
+const colInactivas = computed(() => [
+    { campo: 'time', titulo: 'Hora', filtro: 'texto', ancho: '90px' },
+    { campo: 'patient', titulo: 'Paciente', filtro: 'texto' },
+    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos(props.inactivas, 'doctor') },
+    { campo: 'status', titulo: 'Estado', filtro: 'lista', opciones: ['Cancelada', 'Reagendada'] },
+    { campo: 'last', titulo: 'Último movimiento', filtro: 'texto' },
+]);
+const claseFila = (r) => (r.state === 'Disponible' ? 'fila-libre' : r.state === 'Bloqueada' ? 'fila-bloq' : r.state === 'Anticipo pendiente' ? 'fila-alerta' : '');
+const conteo = (estados) => props.filas.filter((r) => estados.includes(r.state)).length;
 </script>
 
 <template>
@@ -21,42 +44,40 @@ function clickFila(r) { if (r.appt) ui.abrirCita(r.appt.id); }
         <div class="vh">
             <DateNav :fecha="fecha" @cambiar="ir({ fecha: $event })" />
             <div class="sp" />
-            <Select :model-value="filtros.doc" :options="medicos" option-label="name" option-value="id" placeholder="Todos los médicos" show-clear filter @update:model-value="ir({ doc: $event })" />
             <label class="chk"><Checkbox :model-value="filtros.ocultar" binary @update:model-value="ir({ ocultar: $event ? 1 : null })" />Ocultar espacios libres</label>
+            <Segmento v-model="vista" :opciones="[{ l: 'Agenda del día', v: 'agenda', i: 'pi pi-calendar', n: filas.length }, { l: 'Canceladas y reagendadas', v: 'inactivas', i: 'pi pi-times-circle', n: inactivas.length }]" />
         </div>
-        <div class="card tbl-wrap">
-            <table class="tbl">
-                <thead><tr><th>Hora</th><th>Paciente</th><th>Especialidad</th><th>Médico</th><th>Estado</th><th>Historia clínica</th><th>Anticipo</th><th>Acción</th></tr></thead>
-                <tbody>
-                    <tr v-for="(r, i) in filas" :key="i" :class="{ click: r.appt }" @click="clickFila(r)">
-                        <td><b>{{ r.time }}</b></td>
-                        <td>{{ r.appt ? r.appt.patient : '—' }}<span v-if="r.off" class="small" style="color: var(--danger)"> fuera de horario</span></td>
-                        <td>{{ r.specialty }}</td>
-                        <td>{{ r.doctor }}</td>
-                        <td><Chip :valor="r.state" /> <span v-if="r.block" class="muted small">{{ r.block.type }}</span></td>
-                        <td><Chip v-if="r.appt" :valor="r.appt.hc_status" tipo="hc" /><span v-else>—</span></td>
-                        <td><Chip v-if="r.appt" :valor="r.appt.deposit_state" tipo="dep" /><span v-else>—</span></td>
-                        <td @click.stop>
-                            <Button v-if="r.state === 'Disponible' && puede('cita')" label="Agendar" size="small" severity="secondary" outlined @click="ui.abrir('nuevaCita', { doctor_id: r.doctor_id, date: fecha, time: r.time })" />
-                            <Button v-else-if="r.state === 'Bloqueada'" label="Administrar" size="small" severity="secondary" outlined @click="ui.abrir('bloqueoVer', { id: r.block.id })" />
-                            <Button v-else-if="r.appt && r.appt.status === 'Anticipo pendiente' && puede('anticipo')" label="Gestionar" size="small" severity="warn" @click="ui.abrirCita(r.appt.id)" />
-                            <Button v-else-if="r.appt" label="Ver" size="small" severity="secondary" outlined @click="ui.abrirCita(r.appt.id)" />
-                            <span v-else class="muted">—</span>
-                        </td>
-                    </tr>
-                    <tr v-if="!filas.length"><td colspan="8"><div class="empty"><b>Sin agenda para este día</b>No hay médicos con consulta el {{ fmtDL(fecha).toLowerCase() }}.</div></td></tr>
-                </tbody>
-            </table>
+        <div class="kpis linea">
+            <Kpi etiqueta="Disponibles" :valor="conteo(['Disponible'])" icono="pi pi-calendar-plus" color="#1f9e86" />
+            <Kpi etiqueta="Agendadas" :valor="conteo(['Agendada'])" icono="pi pi-bookmark" color="#2b5480" />
+            <Kpi etiqueta="Confirmadas" :valor="conteo(['Confirmada'])" icono="pi pi-check-circle" color="#0e7490" />
+            <Kpi etiqueta="Anticipo pendiente" :valor="conteo(['Anticipo pendiente'])" icono="pi pi-wallet" color="#e08a1e" />
+            <Kpi etiqueta="En consulta / atendidas" :valor="conteo(['En consulta', 'Atendida'])" icono="pi pi-heart" color="#6b4bc9" />
+            <Kpi etiqueta="Bloqueadas" :valor="conteo(['Bloqueada'])" icono="pi pi-ban" color="#64748b" />
         </div>
-        <div v-if="inactivas.length" class="card" style="margin-top: 14px">
-            <header><h3>Canceladas y reagendadas del día</h3></header>
-            <div class="tbl-wrap">
-                <table class="tbl"><tbody>
-                    <tr v-for="a in inactivas" :key="a.id" class="click" @click="ui.abrirCita(a.id)">
-                        <td><b>{{ a.time }}</b></td><td>{{ a.patient }}</td><td>{{ a.doctor }}</td><td><Chip :valor="a.status" /></td><td class="muted small">{{ a.last }}</td>
-                    </tr>
-                </tbody></table>
-            </div>
-        </div>
+
+        <TablaDatos v-if="vista === 'agenda'" :filas="filas" :columnas="columnas" clave="_id" clicable :clase-fila="claseFila" vacio="Sin agenda para este día"
+            @fila="(r) => r.appt && ui.abrirCita(r.appt.id)">
+            <template #c-time="{ fila }"><b>{{ fila.time }}</b></template>
+            <template #c-paciente="{ fila }">
+                <span v-if="fila.appt" style="font-weight: 600">{{ fila.paciente }}</span><span v-else class="muted">—</span>
+                <span v-if="fila.off" class="small" style="color: var(--danger)"> fuera de horario</span>
+            </template>
+            <template #c-state="{ fila }"><Chip :valor="fila.state" /> <span v-if="fila.block" class="muted small">{{ fila.block.type }}</span></template>
+            <template #c-hc="{ fila }"><Chip v-if="fila.appt" :valor="fila.hc" tipo="hc" /><span v-else class="muted">—</span></template>
+            <template #c-anticipo="{ fila }"><Chip v-if="fila.appt" :valor="fila.anticipo" tipo="dep" /><span v-else class="muted">—</span></template>
+            <template #c-accion="{ fila }">
+                <div @click.stop>
+                    <Button v-if="fila.state === 'Disponible' && puede('cita')" label="Agendar" icon="pi pi-plus" size="small" @click="ui.abrir('nuevaCita', { doctor_id: fila.doctor_id, date: fecha, time: fila.time })" />
+                    <Button v-else-if="fila.state === 'Bloqueada'" label="Administrar" icon="pi pi-ban" size="small" severity="secondary" outlined @click="ui.abrir('bloqueoVer', { id: fila.block.id })" />
+                    <Button v-else-if="fila.appt && fila.appt.status === 'Anticipo pendiente' && puede('anticipo')" label="Gestionar" icon="pi pi-wallet" size="small" severity="warn" @click="ui.abrirCita(fila.appt.id)" />
+                    <Button v-else-if="fila.appt" label="Ver" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrirCita(fila.appt.id)" />
+                </div>
+            </template>
+        </TablaDatos>
+        <TablaDatos v-else :filas="inactivas" :columnas="colInactivas" clicable vacio="Sin citas canceladas ni reagendadas este día" @fila="(a) => ui.abrirCita(a.id)">
+            <template #c-status="{ fila }"><Chip :valor="fila.status" /></template>
+            <template #c-last="{ fila }"><span class="muted small">{{ fila.last }}</span></template>
+        </TablaDatos>
     </AppLayout>
 </template>

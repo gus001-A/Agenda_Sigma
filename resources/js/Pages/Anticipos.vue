@@ -1,44 +1,51 @@
 <script setup>
+import { computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
+import Kpi from '@/Components/Kpi.vue';
+import TablaDatos from '@/Components/TablaDatos.vue';
 import { ui, usePermisos } from '@/lib/ui';
-import { filtrar } from '@/lib/api';
 import { fmtD, money } from '@/lib/util';
 
-defineProps({ estado: String, kpis: Object, lista: Array });
+const props = defineProps({ estado: String, kpis: Object, lista: Array });
 const { puede } = usePermisos();
-const estados = [{ l: 'Todos', v: null }, ...['Pendiente', 'Parcial', 'Pagado', 'Reembolsado'].map((x) => ({ l: x, v: x }))];
+const unicos = (k) => [...new Set(props.lista.map((x) => x[k]).filter(Boolean))].sort();
+const filas = computed(() => props.lista.map((a) => ({ ...a, fecha: `${fmtD(a.date)} ${a.time}` })));
+const columnas = computed(() => [
+    { campo: 'fecha', titulo: 'Fecha', filtro: 'texto', ancho: '140px' },
+    { campo: 'patient', titulo: 'Paciente', filtro: 'texto', ancho: '200px' },
+    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos('doctor') },
+    { campo: 'status', titulo: 'Estado de cita', filtro: 'lista', opciones: unicos('status') },
+    { campo: 'deposit', titulo: 'Requerido', alinear: 'right' },
+    { campo: 'paid', titulo: 'Pagado', alinear: 'right' },
+    { campo: 'balance', titulo: 'Saldo', alinear: 'right' },
+    { campo: 'deposit_state', titulo: 'Anticipo', filtro: 'lista', opciones: ['Pendiente', 'Parcial', 'Pagado', 'Reembolsado'] },
+    { campo: 'accion', titulo: 'Acción', ordenar: false, ancho: '150px' },
+]);
 </script>
 
 <template>
-    <AppLayout titulo="Anticipos" subtitulo="Pagos y saldos de citas">
-        <div class="kpis">
-            <div class="kpi"><span>Anticipos cobrados</span><b>{{ money(kpis.cobrados) }}</b></div>
-            <div class="kpi alert"><span>Pendientes por cobrar</span><b>{{ money(kpis.pendientes) }}</b></div>
-            <div class="kpi"><span>Reembolsados</span><b>{{ money(kpis.reembolsados) }}</b></div>
-            <div class="kpi"><span>Citas con anticipo</span><b>{{ kpis.citas }}</b></div>
+    <AppLayout titulo="Anticipos" subtitulo="Pagos, saldos y reembolsos de citas">
+        <div class="kpis linea">
+            <Kpi etiqueta="Anticipos cobrados" :valor="money(kpis.cobrados)" icono="pi pi-check-circle" color="#16a34a" />
+            <Kpi etiqueta="Pendientes por cobrar" :valor="money(kpis.pendientes)" icono="pi pi-hourglass" color="#e08a1e" />
+            <Kpi etiqueta="Reembolsados" :valor="money(kpis.reembolsados)" icono="pi pi-replay" color="#8e3b69" />
+            <Kpi etiqueta="Citas con anticipo" :valor="kpis.citas" icono="pi pi-wallet" color="#173a5f" />
         </div>
-        <div class="vh">
-            <SelectButton :model-value="estado" :options="estados" option-label="l" option-value="v" :allow-empty="false" @update:model-value="filtrar('anticipos', { estado: $event })" />
-        </div>
-        <div class="card tbl-wrap">
-            <table class="tbl">
-                <thead><tr><th>Fecha</th><th>Paciente</th><th>Médico</th><th>Estado de cita</th><th class="num">Requerido</th><th class="num">Pagado</th><th class="num">Saldo</th><th>Anticipo</th><th></th></tr></thead>
-                <tbody>
-                    <tr v-for="a in lista" :key="a.id" class="click" @click="ui.abrirCita(a.id)">
-                        <td style="white-space: nowrap">{{ fmtD(a.date) }} {{ a.time }}</td>
-                        <td>{{ a.patient }}</td><td>{{ a.doctor }}</td><td><Chip :valor="a.status" /></td>
-                        <td class="num">{{ money(a.deposit) }}</td><td class="num">{{ money(a.paid) }}</td>
-                        <td class="num">{{ a.refunded ? '—' : money(a.balance) }}</td>
-                        <td><Chip :valor="a.deposit_state" tipo="dep" /></td>
-                        <td @click.stop>
-                            <Button v-if="a.active && a.balance > 0 && puede('anticipo')" label="Registrar pago" size="small" severity="warn" @click="ui.abrir('pago', { cita: a })" />
-                            <Button v-else-if="!a.active && a.paid > 0 && !a.refunded && puede('anticipo')" label="Reembolsar" size="small" severity="secondary" outlined @click="ui.abrir('reembolso', { cita: a })" />
-                        </td>
-                    </tr>
-                    <tr v-if="!lista.length"><td colspan="9"><div class="empty"><b>Sin anticipos con este estado</b></div></td></tr>
-                </tbody>
-            </table>
-        </div>
+        <TablaDatos :filas="filas" :columnas="columnas" clicable :filtros-iniciales="{ deposit_state: estado }" :clase-fila="(a) => (a.balance > 0 && a.active ? 'fila-alerta' : '')"
+            vacio="Sin anticipos con estos filtros" @fila="(a) => ui.abrirCita(a.id)">
+            <template #c-patient="{ fila }"><b style="font-weight: 600">{{ fila.patient }}</b></template>
+            <template #c-status="{ fila }"><Chip :valor="fila.status" /></template>
+            <template #c-deposit="{ fila }">{{ money(fila.deposit) }}</template>
+            <template #c-paid="{ fila }"><span style="color: #16806c; font-weight: 600">{{ money(fila.paid) }}</span></template>
+            <template #c-balance="{ fila }"><span v-if="fila.refunded" class="muted">—</span><b v-else :style="{ color: fila.balance > 0 ? '#a86717' : 'inherit' }">{{ money(fila.balance) }}</b></template>
+            <template #c-deposit_state="{ fila }"><Chip :valor="fila.deposit_state" tipo="dep" /></template>
+            <template #c-accion="{ fila }">
+                <div @click.stop>
+                    <Button v-if="fila.active && fila.balance > 0 && puede('anticipo')" label="Registrar pago" icon="pi pi-wallet" size="small" severity="warn" @click="ui.abrir('pago', { cita: fila })" />
+                    <Button v-else-if="!fila.active && fila.paid > 0 && !fila.refunded && puede('anticipo')" label="Reembolsar" icon="pi pi-replay" size="small" severity="secondary" outlined @click="ui.abrir('reembolso', { cita: fila })" />
+                </div>
+            </template>
+        </TablaDatos>
     </AppLayout>
 </template>

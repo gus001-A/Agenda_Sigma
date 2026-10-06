@@ -17,8 +17,8 @@ class AnticiposController extends Controller
         $estado = in_array($request->estado, ['Pendiente', 'Parcial', 'Pagado', 'Reembolsado'], true) ? $request->estado : null;
         $todas = Appointment::with('patient:id,name', 'doctor:id,name')->where('deposit', '>', 0)->where('status', '!=', 'Reagendada')
             ->orderBy('date')->orderBy('time')->get();
-        $lista = $todas->filter(fn ($a) => (! $estado || $a->depositState() === $estado) && $a->dateString() >= Agenda::sumarDias($hoy, -10))
-            ->take(150)->map(fn ($a) => Presentador::cita($a))->values();
+        $lista = $todas->filter(fn ($a) => $a->dateString() >= Agenda::sumarDias($hoy, -10))
+            ->take(600)->map(fn ($a) => Presentador::cita($a))->values();
 
         return Inertia::render('Anticipos', [
             'estado' => $estado,

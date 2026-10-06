@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Segmento from '@/Components/Segmento.vue';
 import Chip from '@/Components/Chip.vue';
 import DateNav from '@/Components/DateNav.vue';
 import { ui, usePermisos } from '@/lib/ui';
@@ -60,7 +61,7 @@ const etiquetaMes = computed(() => { const d = parseISO(props.fecha); return `${
 <template>
     <AppLayout titulo="Agenda médica" subtitulo="Disponibilidad generada a partir de reglas de horario">
         <div class="vh">
-            <SelectButton :model-value="modo" :options="[{ l: 'Día', v: 'dia' }, { l: 'Semana', v: 'semana' }, { l: 'Mes', v: 'mes' }]" option-label="l" option-value="v" :allow-empty="false" @update:model-value="ir({ modo: $event })" />
+            <Segmento :model-value="modo" :opciones="[{ l: 'Día', v: 'dia', i: 'pi pi-stop' }, { l: 'Semana', v: 'semana', i: 'pi pi-pause' }, { l: 'Mes', v: 'mes', i: 'pi pi-th-large' }]" @update:model-value="ir({ modo: $event })" />
             <div v-if="modo === 'mes'" class="row" style="gap: 6px">
                 <Button icon="pi pi-chevron-left" size="small" severity="secondary" outlined @click="moverMes(-1)" />
                 <Button label="Hoy" size="small" severity="secondary" outlined @click="ir({ fecha: hoy })" />
@@ -71,7 +72,7 @@ const etiquetaMes = computed(() => { const d = parseISO(props.fecha); return `${
             <div class="sp" />
             <Button v-if="puede('bloqueo')" label="Bloquear horario" icon="pi pi-ban" severity="secondary" outlined @click="ui.abrir('bloqueo', { scope: 'doctor', target_id: filtros.doc || 0, date: fecha })" />
         </div>
-        <div class="row" style="margin-bottom: 12px">
+        <div class="filtros">
             <Select :model-value="filtros.spec" :options="op.especialidades" option-label="name" option-value="id" placeholder="Todas las especialidades" show-clear :disabled="bloqueado" @update:model-value="ir({ spec: $event })" />
             <Select :model-value="filtros.doc" :options="medicosFiltro" option-label="name" option-value="id" :placeholder="modo === 'semana' ? 'Elige un médico' : 'Todos los médicos'" show-clear filter :disabled="bloqueado" @update:model-value="ir({ doc: $event })" />
             <Select :model-value="filtros.room" :options="consultorios" option-label="name" option-value="id" placeholder="Todos los consultorios" show-clear @update:model-value="ir({ room: $event })" />

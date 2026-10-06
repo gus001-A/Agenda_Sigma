@@ -43,11 +43,11 @@ async function revisada() { const r = await api.post(route('api.citas.revisada',
                         <div class="row"><Chip :valor="a.status" /><Chip :valor="a.hc_status" tipo="hc" /></div>
                     </div>
                     <div class="acts">
-                        <Button v-if="['Agendada', 'Confirmada', 'Anticipo pendiente'].includes(a.status) && a.date === hoy && puede('consulta')" label="Iniciar consulta" @click="estado('En consulta')" />
-                        <Button v-if="a.status === 'En consulta' && puede('consulta')" label="Finalizar atención" @click="ui.abrir('finalizar', { cita: a })" />
-                        <Button v-if="puede('clinico') && ['Completado', 'Requiere actualización'].includes(a.hc_status)" label="Marcar como revisada" severity="secondary" outlined @click="revisada" />
-                        <Button v-if="puede('clinico') && a.status !== 'Atendida' && a.hc_status !== 'Pendiente'" label="Solicitar actualización" severity="secondary" outlined @click="ui.abrir('historia', { id: a.id })" />
-                        <Button label="Detalle de la cita" severity="secondary" text @click="ui.abrirCita(a.id)" />
+                        <Button v-if="['Agendada', 'Confirmada', 'Anticipo pendiente'].includes(a.status) && a.date === hoy && puede('consulta')" label="Iniciar consulta" icon="pi pi-play" @click="estado('En consulta')" />
+                        <Button v-if="a.status === 'En consulta' && puede('consulta')" label="Finalizar atención" icon="pi pi-check-circle" @click="ui.abrir('finalizar', { cita: a })" />
+                        <Button v-if="puede('clinico') && ['Completado', 'Requiere actualización'].includes(a.hc_status)" label="Marcar como revisada" icon="pi pi-verified" severity="success" outlined @click="revisada" />
+                        <Button v-if="puede('clinico') && a.status !== 'Atendida' && a.hc_status !== 'Pendiente'" label="Solicitar actualización" icon="pi pi-refresh" severity="warn" outlined @click="ui.abrir('historia', { id: a.id })" />
+                        <Button label="Detalle de la cita" icon="pi pi-external-link" severity="secondary" text @click="ui.abrirCita(a.id)" />
                     </div>
                     <div v-if="a.attention_note" class="note"><b style="font-weight: 500">Nota de atención:</b> {{ a.attention_note }}</div>
                 </div>

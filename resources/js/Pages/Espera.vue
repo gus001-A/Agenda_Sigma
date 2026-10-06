@@ -1,25 +1,34 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
+import Kpi from '@/Components/Kpi.vue';
+import TablaDatos from '@/Components/TablaDatos.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { fmtD } from '@/lib/util';
 
-defineProps({ lista: Array });
+const props = defineProps({ lista: Array });
 const { puede } = usePermisos();
 const buscando = ref(null);
 const espacios = ref([]);
+const unicos = (k) => [...new Set(props.lista.map((x) => x[k]).filter(Boolean))].sort();
+const filas = computed(() => props.lista.map((w) => ({ ...w, medico: w.doctor || 'Cualquiera', solicitud: fmtD(w.requested_at) })));
+const columnas = computed(() => [
+    { campo: 'patient', titulo: 'Paciente', filtro: 'texto', ancho: '220px' },
+    { campo: 'specialty', titulo: 'Especialidad', filtro: 'lista', opciones: unicos('specialty') },
+    { campo: 'medico', titulo: 'Médico', filtro: 'lista', opciones: [...new Set(filas.value.map((x) => x.medico))].sort() },
+    { campo: 'solicitud', titulo: 'Solicitud', filtro: 'texto', ancho: '120px' },
+    { campo: 'preference', titulo: 'Preferencia', filtro: 'lista', opciones: ['Cualquier horario', 'Mañana', 'Tarde'] },
+    { campo: 'priority', titulo: 'Prioridad', filtro: 'lista', opciones: ['Alta', 'Media', 'Baja'] },
+    { campo: 'status', titulo: 'Estado', filtro: 'lista', opciones: ['En espera', 'Contactado', 'Agendado', 'Descartado'] },
+    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '330px' },
+]);
+const COL_PRIO = { Alta: '#d64545', Media: '#e08a1e', Baja: '#1f9e86' };
+const cuenta = (s) => props.lista.filter((w) => w.status === s).length;
 
-async function estado(w, status) {
-    await api.patch(route('api.espera.estado', w.id), { status });
-    avisar('Estado actualizado');
-    refrescar();
-}
-async function buscar(w) {
-    espacios.value = await api.get(route('api.espera.espacios', w.id));
-    buscando.value = w;
-}
+async function estado(w, status) { await api.patch(route('api.espera.estado', w.id), { status }); avisar('Estado actualizado'); refrescar(); }
+async function buscar(w) { espacios.value = await api.get(route('api.espera.espacios', w.id)); buscando.value = w; }
 function agendar(x, t) {
     const w = buscando.value;
     buscando.value = null;
@@ -28,44 +37,37 @@ function agendar(x, t) {
 </script>
 
 <template>
-    <AppLayout titulo="Lista de espera" subtitulo="Pacientes sin disponibilidad inmediata">
-        <div class="vh">
-            <p class="muted">Cuando se cancela o reagenda una cita, el sistema propone a los pacientes compatibles.</p>
-            <div class="sp" />
-            <Button v-if="puede('cita')" label="Agregar paciente" icon="pi pi-plus" @click="ui.abrir('nuevaEspera', {})" />
+    <AppLayout titulo="Lista de espera" subtitulo="Cuando se cancela o reagenda una cita, el sistema propone a los pacientes compatibles">
+        <template #acciones><Button v-if="puede('cita')" label="Agregar paciente" icon="pi pi-user-plus" severity="secondary" outlined @click="ui.abrir('nuevaEspera', {})" /></template>
+        <div class="kpis linea">
+            <Kpi etiqueta="En espera" :valor="cuenta('En espera')" icono="pi pi-clock" color="#e08a1e" />
+            <Kpi etiqueta="Contactados" :valor="cuenta('Contactado')" icono="pi pi-phone" color="#2b5480" />
+            <Kpi etiqueta="Agendados" :valor="cuenta('Agendado')" icono="pi pi-calendar-plus" color="#1f9e86" />
+            <Kpi etiqueta="Prioridad alta" :valor="lista.filter((w) => w.priority === 'Alta' && ['En espera', 'Contactado'].includes(w.status)).length" icono="pi pi-exclamation-triangle" color="#d64545" />
         </div>
-        <div class="card tbl-wrap">
-            <table class="tbl">
-                <thead><tr><th>Paciente</th><th>Especialidad</th><th>Médico</th><th>Solicitud</th><th>Preferencia</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
-                <tbody>
-                    <tr v-for="w in lista" :key="w.id">
-                        <td>{{ w.patient }}<div v-if="w.notes" class="muted small">{{ w.notes }}</div></td>
-                        <td>{{ w.specialty }}</td>
-                        <td>{{ w.doctor || '' }}<span v-if="!w.doctor" class="muted">Cualquiera</span></td>
-                        <td>{{ fmtD(w.requested_at) }}</td>
-                        <td>{{ w.preference }}</td>
-                        <td><b v-if="w.priority === 'Alta'" style="color: var(--danger); font-weight: 600">Alta</b><template v-else>{{ w.priority }}</template></td>
-                        <td><Chip :valor="w.status" tipo="espera" /></td>
-                        <td style="white-space: nowrap">
-                            <template v-if="['En espera', 'Contactado'].includes(w.status) && puede('cita')">
-                                <Button label="Buscar espacio" size="small" @click="buscar(w)" />
-                                <Button :label="w.status === 'En espera' ? 'Marcar contactado' : 'Regresar a espera'" size="small" text @click="estado(w, w.status === 'En espera' ? 'Contactado' : 'En espera')" />
-                                <Button label="Descartar" size="small" text severity="secondary" @click="estado(w, 'Descartado')" />
-                            </template>
-                            <Button v-else-if="w.appointment_id" label="Ver cita" size="small" severity="secondary" outlined @click="ui.abrirCita(w.appointment_id)" />
-                        </td>
-                    </tr>
-                    <tr v-if="!lista.length"><td colspan="8"><div class="empty"><b>No hay pacientes en espera</b></div></td></tr>
-                </tbody>
-            </table>
-        </div>
+        <TablaDatos :filas="filas" :columnas="columnas" vacio="No hay pacientes en la lista de espera">
+            <template #c-patient="{ fila }"><b style="font-weight: 600">{{ fila.patient }}</b><div v-if="fila.notes" class="muted small">{{ fila.notes }}</div></template>
+            <template #c-medico="{ fila }"><span :class="{ muted: !fila.doctor }">{{ fila.medico }}</span></template>
+            <template #c-priority="{ fila }"><span class="chip" :style="{ '--sb': COL_PRIO[fila.priority] + '1a', '--sf': COL_PRIO[fila.priority] }">{{ fila.priority }}</span></template>
+            <template #c-status="{ fila }"><Chip :valor="fila.status" tipo="espera" /></template>
+            <template #c-acciones="{ fila }">
+                <div class="row" style="gap: 4px; flex-wrap: nowrap">
+                    <template v-if="['En espera', 'Contactado'].includes(fila.status) && puede('cita')">
+                        <Button label="Buscar espacio" icon="pi pi-search" size="small" @click="buscar(fila)" />
+                        <Button v-tooltip.top="fila.status === 'En espera' ? 'Marcar contactado' : 'Regresar a espera'" :icon="fila.status === 'En espera' ? 'pi pi-phone' : 'pi pi-undo'" size="small" severity="info" text rounded @click="estado(fila, fila.status === 'En espera' ? 'Contactado' : 'En espera')" />
+                        <Button v-tooltip.top="'Descartar'" icon="pi pi-trash" size="small" severity="danger" text rounded @click="estado(fila, 'Descartado')" />
+                    </template>
+                    <Button v-else-if="fila.appointment_id" label="Ver cita" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrirCita(fila.appointment_id)" />
+                </div>
+            </template>
+        </TablaDatos>
 
         <Dialog :visible="!!buscando" modal :header="buscando ? 'Espacios para ' + buscando.patient : ''" :style="{ width: '720px' }" :breakpoints="{ '760px': '96vw' }" @update:visible="buscando = null">
             <template v-if="buscando">
                 <template v-if="espacios.length">
                     <p class="muted small">{{ buscando.specialty }}<template v-if="buscando.doctor">, {{ buscando.doctor }}</template>, preferencia: {{ buscando.preference.toLowerCase() }}.</p>
                     <div v-for="x in espacios" :key="x.date + x.doctor_id">
-                        <b style="font-weight: 500">{{ fmtD(x.date) }}</b> <span class="muted small">{{ x.doctor }}</span>
+                        <b style="font-weight: 600"><i class="pi pi-calendar" style="color: var(--teal); font-size: 12px" /> {{ fmtD(x.date) }}</b> <span class="muted small">{{ x.doctor }}</span>
                         <div class="times" style="margin-top: 6px"><button v-for="t in x.times" :key="t" type="button" @click="agendar(x, t)">{{ t }}</button></div>
                     </div>
                 </template>
