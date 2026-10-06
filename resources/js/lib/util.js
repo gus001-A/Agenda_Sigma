@@ -34,3 +34,4 @@ export const isoToDate = (s) => (s ? parseISO(s) : null);
 
 /** Opciones {label, value} a partir de una lista. */
 export const opciones = (lista, label = 'name', value = 'id') => (lista || []).map((x) => (typeof x === 'object' ? { label: x[label], value: x[value] } : { label: x, value: x }));
+export const COLOR_ESTADO = { Disponible: '#1f9e86', Agendada: '#2b5480', Confirmada: '#0e7490', 'Anticipo pendiente': '#e08a1e', 'En consulta': '#6b4bc9', Atendida: '#64748b', Cancelada: '#d64545', Reagendada: '#8e3b69', Bloqueada: '#94a3b8' };

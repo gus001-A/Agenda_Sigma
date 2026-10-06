@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
 import { fmtD, COLOR_HC } from '@/lib/util';
@@ -19,11 +20,11 @@ const filas = computed(() => props.lista.map((a) => ({ ...a, cita: `${fmtD(a.dat
 const columnas = computed(() => [
     { campo: 'cita', titulo: 'Cita', filtro: 'texto', ancho: '140px' },
     { campo: 'patient', titulo: 'Paciente', filtro: 'texto', ancho: '200px' },
-    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos('doctor') },
+    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos('doctor'), ancho: '210px' },
     { campo: 'form', titulo: 'Formato', filtro: 'lista', opciones: unicos('form') },
     { campo: 'progress', titulo: 'Avance', ancho: '130px' },
     { campo: 'hc_status', titulo: 'Estado', filtro: 'lista', opciones: Object.keys(ICONOS) },
-    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '270px' },
+    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '170px' },
 ]);
 async function reenviar(a) { const r = await api.post(route('api.citas.reenviar', a.id)); avisar(r.message); refrescar(); }
 async function portal(a) { const c = await api.get(route('api.citas.show', a.id)); window.open(c.portal_url, '_blank'); }
@@ -47,12 +48,13 @@ async function portal(a) { const c = await api.get(route('api.citas.show', a.id)
             </template>
             <template #c-hc_status="{ fila }"><Chip :valor="fila.hc_status" tipo="hc" /></template>
             <template #c-acciones="{ fila }">
-                <div class="row" style="gap: 4px; flex-wrap: nowrap" @click.stop>
-                    <Button v-if="puede('verclinico') && fila.hc_status !== 'Pendiente'" label="Ver" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrir('historia', { id: fila.id })" />
+                <div class="accs">
+                    <Accion v-if="puede('verclinico') && fila.hc_status !== 'Pendiente'" icono="pi pi-file-edit" tip="Ver historia clínica" color="cian" @click="ui.abrir('historia', { id: fila.id })" />
                     <template v-if="['Pendiente', 'En proceso', 'Requiere actualización'].includes(fila.hc_status)">
-                        <Button v-if="puede('cita')" label="Reenviar" icon="pi pi-send" size="small" severity="info" outlined @click="reenviar(fila)" />
-                        <Button v-tooltip.top="'Llenar como paciente'" icon="pi pi-mobile" size="small" text rounded @click="portal(fila)" />
+                        <Accion v-if="puede('cita')" icono="pi pi-send" tip="Reenviar enlace al paciente" color="rosa" @click="reenviar(fila)" />
+                        <Accion icono="pi pi-mobile" tip="Llenar como paciente" color="morado" @click="portal(fila)" />
                     </template>
+                    <Accion icono="pi pi-eye" tip="Ver detalle de la cita" color="azul" @click="ui.abrirCita(fila.id)" />
                 </div>
             </template>
         </TablaDatos>

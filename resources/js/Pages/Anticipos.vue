@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { fmtD, money } from '@/lib/util';
 
@@ -14,7 +15,7 @@ const filas = computed(() => props.lista.map((a) => ({ ...a, fecha: `${fmtD(a.da
 const columnas = computed(() => [
     { campo: 'fecha', titulo: 'Fecha', filtro: 'texto', ancho: '140px' },
     { campo: 'patient', titulo: 'Paciente', filtro: 'texto', ancho: '200px' },
-    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos('doctor') },
+    { campo: 'doctor', titulo: 'Médico', filtro: 'lista', opciones: unicos('doctor'), ancho: '210px' },
     { campo: 'status', titulo: 'Estado de cita', filtro: 'lista', opciones: unicos('status') },
     { campo: 'deposit', titulo: 'Requerido', alinear: 'right' },
     { campo: 'paid', titulo: 'Pagado', alinear: 'right' },
@@ -41,9 +42,10 @@ const columnas = computed(() => [
             <template #c-balance="{ fila }"><span v-if="fila.refunded" class="muted">—</span><b v-else :style="{ color: fila.balance > 0 ? '#a86717' : 'inherit' }">{{ money(fila.balance) }}</b></template>
             <template #c-deposit_state="{ fila }"><Chip :valor="fila.deposit_state" tipo="dep" /></template>
             <template #c-accion="{ fila }">
-                <div @click.stop>
-                    <Button v-if="fila.active && fila.balance > 0 && puede('anticipo')" label="Registrar pago" icon="pi pi-wallet" size="small" severity="warn" @click="ui.abrir('pago', { cita: fila })" />
-                    <Button v-else-if="!fila.active && fila.paid > 0 && !fila.refunded && puede('anticipo')" label="Reembolsar" icon="pi pi-replay" size="small" severity="secondary" outlined @click="ui.abrir('reembolso', { cita: fila })" />
+                <div class="accs">
+                    <Accion icono="pi pi-eye" tip="Ver detalle de la cita" color="azul" @click="ui.abrirCita(fila.id)" />
+                    <Accion v-if="fila.active && fila.balance > 0 && puede('anticipo')" icono="pi pi-wallet" texto="Cobrar" color="ambar" @click="ui.abrir('pago', { cita: fila })" />
+                    <Accion v-else-if="!fila.active && fila.paid > 0 && !fila.refunded && puede('anticipo')" icono="pi pi-replay" texto="Reembolsar" color="morado" @click="ui.abrir('reembolso', { cita: fila })" />
                 </div>
             </template>
         </TablaDatos>

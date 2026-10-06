@@ -70,6 +70,7 @@ class PanelController extends Controller
             'proximas' => $proximas,
             'cargas' => $cargas,
             'historias' => $hc,
+            'estadosHoy' => $lista->countBy('status'),
             'espera' => WaitlistEntry::with('patient:id,name', 'specialty:id,name')->where('status', 'En espera')->limit(4)->get()
                 ->map(fn ($w) => ['patient' => $w->patient->name, 'specialty' => $w->specialty->name, 'priority' => $w->priority]),
         ]);

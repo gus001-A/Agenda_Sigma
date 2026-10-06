@@ -41,7 +41,7 @@ class CatalogosController extends Controller
             // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
             $f = collect($request->input('f', []))->only(['sigma_id', 'name', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
             $data['filtros'] = (object) $f->all();
-            $porPagina = in_array((int) $request->per_page, [10, 15], true) ? (int) $request->per_page : 10;
+            $porPagina = 12;
             $data['pacientes'] = Patient::query()
                 ->when($f->get('sigma_id'), fn ($w, $v) => $w->where('sigma_id', 'like', "%{$v}%"))
                 ->when($f->get('name'), fn ($w, $v) => $w->where('name', 'like', "%{$v}%"))

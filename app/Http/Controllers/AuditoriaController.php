@@ -13,7 +13,7 @@ class AuditoriaController extends Controller
     {
         // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
         $f = collect($request->input('f', []))->only(['fecha', 'user', 'action', 'detail', 'ip'])->filter(fn ($v) => $v !== null && $v !== '');
-        $porPagina = in_array((int) $request->per_page, [10, 15], true) ? (int) $request->per_page : 10;
+        $porPagina = 12;
 
         return Inertia::render('Auditoria', [
             'filtros' => (object) $f->all(),

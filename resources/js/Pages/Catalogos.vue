@@ -6,6 +6,7 @@ import Chip from '@/Components/Chip.vue';
 import Fecha from '@/Components/Fecha.vue';
 import Hora from '@/Components/Hora.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
 import { money, fmtDS, fmtDL, DIAS, DSH, CLASE_ESTADO, hoyISO, initials } from '@/lib/util';
@@ -141,7 +142,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="hic" style="--c: #0891b2"><i class="pi pi-bookmark" /></span><span><b style="font-weight: 600">{{ fila.name }}</b><div class="muted small">{{ fila.description }}</div></span></span></template>
             <template #c-default_cost="{ fila }">{{ money(fila.default_cost) }}</template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
-            <template #c-acc="{ fila }"><Button v-if="puede('config')" v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="info" text rounded @click="abrirEsp(fila)" /></template>
+            <template #c-acc="{ fila }"><Accion v-if="puede('config')" icono="pi pi-pencil" tip="Editar" color="azul" @click="abrirEsp(fila)" /></template>
         </TablaDatos>
 
         <!-- MÉDICOS -->
@@ -151,7 +152,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-cost="{ fila }">{{ money(fila.cost) }}</template>
             <template #c-anticipo="{ fila }"><span :style="{ color: fila.deposit_amount ? '#a86717' : '' }">{{ anticipo(fila) }}</span></template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
-            <template #c-acc="{ fila }"><Button v-if="puede('config')" label="Configurar" icon="pi pi-cog" size="small" severity="secondary" outlined @click="abrirMed(fila)" /></template>
+            <template #c-acc="{ fila }"><Accion v-if="puede('config')" icono="pi pi-sliders-h" texto="Horario" color="verde" @click="abrirMed(fila)" /></template>
         </TablaDatos>
 
         <!-- ESPACIOS -->
@@ -160,7 +161,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-cost="{ fila }">{{ fila.cost ? money(fila.cost) : '—' }}</template>
             <template #c-equipment="{ fila }"><span class="small">{{ fila.equipment }}</span></template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
-            <template #c-acc="{ fila }"><Button v-if="puede('operativo')" v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="info" text rounded @click="abrirRec(fila)" /></template>
+            <template #c-acc="{ fila }"><Accion v-if="puede('operativo')" icono="pi pi-pencil" tip="Editar" color="azul" @click="abrirRec(fila)" /></template>
         </TablaDatos>
 
         <!-- PACIENTES (filtrado en el servidor) -->
@@ -172,11 +173,11 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-citas="{ fila }"><span class="chip plain s-agen">{{ fila.citas }}</span></template>
             <template #c-ultima="{ fila }"><template v-if="fila.ultima">{{ fmtDS(fila.ultima.date) }} <span class="muted small">{{ fila.ultima.specialty }}</span></template><span v-else class="muted">—</span></template>
             <template #c-acc="{ fila }">
-                <div class="row" style="gap: 2px; flex-wrap: nowrap">
-                    <Button v-tooltip.top="'Ver citas'" icon="pi pi-history" size="small" severity="info" text rounded @click="verHistorial(fila)" />
+                <div class="accs">
+                    <Accion icono="pi pi-history" tip="Ver citas" color="cian" @click="verHistorial(fila)" />
                     <template v-if="puede('cita')">
-                        <Button v-tooltip.top="'Agendar'" icon="pi pi-calendar-plus" size="small" severity="success" text rounded @click="ui.abrir('nuevaCita', { patient_id: fila.id })" />
-                        <Button v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="abrirPac(fila)" />
+                        <Accion icono="pi pi-calendar-plus" tip="Agendar" color="verde" @click="ui.abrir('nuevaCita', { patient_id: fila.id })" />
+                        <Accion icono="pi pi-pencil" tip="Editar" color="morado" @click="abrirPac(fila)" />
                     </template>
                 </div>
             </template>

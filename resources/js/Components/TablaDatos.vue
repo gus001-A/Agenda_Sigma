@@ -4,7 +4,7 @@ import { FilterMatchMode } from '@primevue/core/api';
 
 /**
  * Tabla estándar del sistema: filtro de búsqueda al pie de cada columna (debajo de los registros),
- * paginación de 10 o 15 registros y desplazamiento interno (la página no se mueve, solo los registros).
+ * paginación de 12 registros y desplazamiento interno (la página no se mueve, solo los registros).
  *
  * columnas: [{ campo, titulo, filtro?: 'texto' | 'lista', opciones?: [], ancho?, alinear?: 'right', ordenar?: bool }]
  * Celdas personalizadas con el slot "c-<campo>" ({ fila }).
@@ -17,7 +17,7 @@ const props = defineProps({
     lazy: Boolean,
     total: Number,
     primero: { type: Number, default: 0 },
-    porPagina: { type: Number, default: 10 },
+    porPagina: { type: Number, default: 12 },
     filtrosIniciales: { type: Object, default: () => ({}) },
     clicable: Boolean,
     claseFila: Function,
@@ -56,6 +56,16 @@ function limpiar() {
     avisarCambio(0);
 }
 defineExpose({ limpiar });
+
+// Páginas visibles: primera, última y dos alrededor de la actual (-1 = puntos suspensivos).
+function ventana(p, total) {
+    if (total <= 7) return [...Array(total).keys()];
+    const set = new Set([0, total - 1, p - 1, p, p + 1].filter((x) => x >= 0 && x < total));
+    const orden = [...set].sort((a, b) => a - b);
+    const out = [];
+    orden.forEach((n, i) => { if (i && n - orden[i - 1] > 1) out.push(-i); out.push(n); });
+    return out;
+}
 </script>
 
 <template>
@@ -66,9 +76,6 @@ defineExpose({ limpiar });
             :value="props.filas"
             :data-key="clave"
             paginator
-            :rows-per-page-options="[10, 15]"
-            paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
-            current-page-report-template="{first}–{last} de {totalRecords}"
             scrollable
             scroll-height="flex"
             removable-sort
@@ -102,8 +109,25 @@ defineExpose({ limpiar });
             <template #empty>
                 <div class="empty"><i class="pi pi-inbox" style="font-size: 26px; color: #b6c3d1" /><b style="margin-top: 6px">{{ vacio }}</b></div>
             </template>
-            <template #paginatorstart>
-                <Button v-if="hayFiltros" label="Limpiar filtros" icon="pi pi-filter-slash" size="small" text @click="limpiar" />
+            <template #paginatorcontainer="{ first, last, page, pageCount, totalRecords, firstPageCallback, prevPageCallback, nextPageCallback, lastPageCallback, changePageCallback }">
+                <div class="pag">
+                    <div class="pag-info">
+                        <span class="pag-ic"><i class="pi pi-list" /></span>
+                        <span>Mostrando <b>{{ totalRecords ? first : 0 }}–{{ last }}</b> de <b>{{ totalRecords }}</b> registros</span>
+                        <Button v-if="hayFiltros" label="Limpiar filtros" icon="pi pi-filter-slash" size="small" severity="danger" text @click="limpiar" />
+                    </div>
+                    <div v-if="pageCount > 1" class="pag-nav">
+                        <button type="button" class="pag-b" :disabled="page === 0" aria-label="Primera página" @click="firstPageCallback"><i class="pi pi-angle-double-left" /></button>
+                        <button type="button" class="pag-b" :disabled="page === 0" aria-label="Página anterior" @click="prevPageCallback"><i class="pi pi-angle-left" /></button>
+                        <template v-for="n in ventana(page, pageCount)" :key="n">
+                            <span v-if="n < 0" class="pag-gap">…</span>
+                            <button v-else type="button" class="pag-b pag-n" :class="{ on: n === page }" @click="changePageCallback(n)">{{ n + 1 }}</button>
+                        </template>
+                        <button type="button" class="pag-b" :disabled="page >= pageCount - 1" aria-label="Página siguiente" @click="nextPageCallback"><i class="pi pi-angle-right" /></button>
+                        <button type="button" class="pag-b" :disabled="page >= pageCount - 1" aria-label="Última página" @click="lastPageCallback"><i class="pi pi-angle-double-right" /></button>
+                    </div>
+                    <span v-else class="pag-una">Página 1 de 1</span>
+                </div>
             </template>
         </DataTable>
     </div>

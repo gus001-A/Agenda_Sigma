@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { fmtD } from '@/lib/util';
@@ -22,7 +23,7 @@ const columnas = computed(() => [
     { campo: 'preference', titulo: 'Preferencia', filtro: 'lista', opciones: ['Cualquier horario', 'Mañana', 'Tarde'] },
     { campo: 'priority', titulo: 'Prioridad', filtro: 'lista', opciones: ['Alta', 'Media', 'Baja'] },
     { campo: 'status', titulo: 'Estado', filtro: 'lista', opciones: ['En espera', 'Contactado', 'Agendado', 'Descartado'] },
-    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '330px' },
+    { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '230px' },
 ]);
 const COL_PRIO = { Alta: '#d64545', Media: '#e08a1e', Baja: '#1f9e86' };
 const cuenta = (s) => props.lista.filter((w) => w.status === s).length;
@@ -51,13 +52,13 @@ function agendar(x, t) {
             <template #c-priority="{ fila }"><span class="chip" :style="{ '--sb': COL_PRIO[fila.priority] + '1a', '--sf': COL_PRIO[fila.priority] }">{{ fila.priority }}</span></template>
             <template #c-status="{ fila }"><Chip :valor="fila.status" tipo="espera" /></template>
             <template #c-acciones="{ fila }">
-                <div class="row" style="gap: 4px; flex-wrap: nowrap">
+                <div class="accs">
                     <template v-if="['En espera', 'Contactado'].includes(fila.status) && puede('cita')">
-                        <Button label="Buscar espacio" icon="pi pi-search" size="small" @click="buscar(fila)" />
-                        <Button v-tooltip.top="fila.status === 'En espera' ? 'Marcar contactado' : 'Regresar a espera'" :icon="fila.status === 'En espera' ? 'pi pi-phone' : 'pi pi-undo'" size="small" severity="info" text rounded @click="estado(fila, fila.status === 'En espera' ? 'Contactado' : 'En espera')" />
-                        <Button v-tooltip.top="'Descartar'" icon="pi pi-trash" size="small" severity="danger" text rounded @click="estado(fila, 'Descartado')" />
+                        <Accion icono="pi pi-search" texto="Buscar espacio" color="verde" @click="buscar(fila)" />
+                        <Accion :icono="fila.status === 'En espera' ? 'pi pi-phone' : 'pi pi-undo'" :tip="fila.status === 'En espera' ? 'Marcar contactado' : 'Regresar a espera'" color="azul" @click="estado(fila, fila.status === 'En espera' ? 'Contactado' : 'En espera')" />
+                        <Accion icono="pi pi-trash" tip="Descartar" color="rojo" @click="estado(fila, 'Descartado')" />
                     </template>
-                    <Button v-else-if="fila.appointment_id" label="Ver cita" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrirCita(fila.appointment_id)" />
+                    <Accion v-else-if="fila.appointment_id" icono="pi pi-eye" tip="Ver cita" color="azul" @click="ui.abrirCita(fila.appointment_id)" />
                 </div>
             </template>
         </TablaDatos>

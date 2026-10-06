@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Segmento from '@/Components/Segmento.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { initials } from '@/lib/util';
@@ -56,7 +57,7 @@ async function permiso(rol, mod, v) { await api.post(route('api.permisos.update'
             <template #c-estatus="{ fila }">
                 <label class="chk" @click.stop><ToggleSwitch :model-value="fila.active" :disabled="!cfg || fila.id === page.props.auth.user.id" @update:model-value="activo(fila, $event)" />{{ fila.estatus }}</label>
             </template>
-            <template #c-acc="{ fila }"><Button v-if="cfg" v-tooltip.top="'Editar'" icon="pi pi-pencil" size="small" severity="info" text rounded @click="abrir(fila)" /></template>
+            <template #c-acc="{ fila }"><Accion v-if="cfg" icono="pi pi-pencil" tip="Editar" color="azul" @click="abrir(fila)" /></template>
         </TablaDatos>
 
         <div v-else class="card" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden">

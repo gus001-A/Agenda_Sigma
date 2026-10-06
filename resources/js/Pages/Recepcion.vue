@@ -6,6 +6,7 @@ import Chip from '@/Components/Chip.vue';
 import DateNav from '@/Components/DateNav.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Accion from '@/Components/Accion.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { filtrar } from '@/lib/api';
 
@@ -67,11 +68,13 @@ const conteo = (estados) => props.filas.filter((r) => estados.includes(r.state))
             <template #c-hc="{ fila }"><Chip v-if="fila.appt" :valor="fila.hc" tipo="hc" /><span v-else class="muted">—</span></template>
             <template #c-anticipo="{ fila }"><Chip v-if="fila.appt" :valor="fila.anticipo" tipo="dep" /><span v-else class="muted">—</span></template>
             <template #c-accion="{ fila }">
-                <div @click.stop>
-                    <Button v-if="fila.state === 'Disponible' && puede('cita')" label="Agendar" icon="pi pi-plus" size="small" @click="ui.abrir('nuevaCita', { doctor_id: fila.doctor_id, date: fecha, time: fila.time })" />
-                    <Button v-else-if="fila.state === 'Bloqueada'" label="Administrar" icon="pi pi-ban" size="small" severity="secondary" outlined @click="ui.abrir('bloqueoVer', { id: fila.block.id })" />
-                    <Button v-else-if="fila.appt && fila.appt.status === 'Anticipo pendiente' && puede('anticipo')" label="Gestionar" icon="pi pi-wallet" size="small" severity="warn" @click="ui.abrirCita(fila.appt.id)" />
-                    <Button v-else-if="fila.appt" label="Ver" icon="pi pi-eye" size="small" severity="secondary" outlined @click="ui.abrirCita(fila.appt.id)" />
+                <div class="accs">
+                    <Accion v-if="fila.state === 'Disponible' && puede('cita')" icono="pi pi-calendar-plus" texto="Agendar" color="verde" @click="ui.abrir('nuevaCita', { doctor_id: fila.doctor_id, date: fecha, time: fila.time })" />
+                    <Accion v-else-if="fila.state === 'Bloqueada'" icono="pi pi-lock" tip="Administrar bloqueo" color="gris" @click="ui.abrir('bloqueoVer', { id: fila.block.id })" />
+                    <template v-else-if="fila.appt">
+                        <Accion icono="pi pi-eye" tip="Ver detalle de la cita" color="azul" @click="ui.abrirCita(fila.appt.id)" />
+                        <Accion v-if="fila.appt.debt > 0 && puede('anticipo')" icono="pi pi-wallet" tip="Cobrar anticipo" color="ambar" @click="ui.abrirCita(fila.appt.id)" />
+                    </template>
                 </div>
             </template>
         </TablaDatos>
