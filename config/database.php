@@ -64,6 +64,21 @@ return [
             ]) : [],
         ],
 
+        // Base heredada de SIGMA (respaldo sigma2024.sql), solo lectura para importar pacientes.
+        'sigma' => [
+            'driver' => 'mysql',
+            'host' => env('SIGMA_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('SIGMA_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('SIGMA_DB_DATABASE', 'sigma2024'),
+            'username' => env('SIGMA_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('SIGMA_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => false,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

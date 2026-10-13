@@ -39,12 +39,13 @@ class CatalogosController extends Controller
             $data['espacios'] = Resource::orderBy('id')->get();
         } else {
             // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
-            $f = collect($request->input('f', []))->only(['sigma_id', 'name', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
+            $f = collect($request->input('f', []))->only(['sigma_id', 'name', 'curp', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
             $data['filtros'] = (object) $f->all();
             $porPagina = 12;
             $data['pacientes'] = Patient::query()
                 ->when($f->get('sigma_id'), fn ($w, $v) => $w->where('sigma_id', 'like', "%{$v}%"))
                 ->when($f->get('name'), fn ($w, $v) => $w->where('name', 'like', "%{$v}%"))
+                ->when($f->get('curp'), fn ($w, $v) => $w->where('curp', 'like', '%'.mb_strtoupper($v).'%'))
                 ->when($f->get('phone'), fn ($w, $v) => $w->whereRaw("REPLACE(phone, ' ', '') like ?", ['%'.str_replace(' ', '', $v).'%']))
                 ->when($f->get('email'), fn ($w, $v) => $w->where('email', 'like', "%{$v}%"))
                 ->withCount('appointments')->orderBy('name')->paginate($porPagina)->withQueryString()
@@ -157,7 +158,9 @@ class CatalogosController extends Controller
 
     public function guardarPaciente(Request $request, ?Patient $paciente = null): JsonResponse
     {
-        $v = $request->validate(['name' => 'required|string|max:255', 'birth_date' => 'required|date|before_or_equal:today', 'phone' => 'required|string|max:30',
+        // Los expedientes importados de SIGMA pueden no tener fecha ni teléfono; solo el alta nueva los exige.
+        $req = $paciente?->exists ? 'nullable' : 'required';
+        $v = $request->validate(['name' => 'required|string|max:255', 'birth_date' => "{$req}|date|before_or_equal:today", 'phone' => "{$req}|string|max:30",
             'email' => 'nullable|email|max:255'], [], ['name' => 'nombre completo', 'birth_date' => 'fecha de nacimiento', 'phone' => 'teléfono']);
         if ($paciente?->exists) {
             $paciente->update($v);

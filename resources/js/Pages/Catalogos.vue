@@ -118,6 +118,7 @@ const colRec = computed(() => [
 const colPac = [
     { campo: 'sigma_id', titulo: 'ID SIGMA24', filtro: 'texto', ancho: '130px' },
     { campo: 'name', titulo: 'Nombre', filtro: 'texto', ancho: '230px' },
+    { campo: 'curp', titulo: 'CURP', filtro: 'texto', ancho: '200px' },
     { campo: 'age', titulo: 'Edad', alinear: 'right', ancho: '80px' },
     { campo: 'phone', titulo: 'Teléfono', filtro: 'texto', ancho: '150px' },
     { campo: 'email', titulo: 'Correo', filtro: 'texto' },
@@ -149,7 +150,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
 
         <!-- MÉDICOS -->
         <TablaDatos v-else-if="tab === 'med'" :filas="filasMed" :columnas="colMed">
-            <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="avatar" style="width: 30px; height: 30px; font-size: 11px">{{ initials(fila.name) }}</span><span><b style="font-weight: 600">{{ fila.name }}</b><div class="muted small"><i class="pi pi-phone" style="font-size: 10px" /> {{ fila.phone }}</div></span></span></template>
+            <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="avatar" style="width: 30px; height: 30px; font-size: 11px">{{ initials(fila.name) }}</span><span><b style="font-weight: 600">{{ fila.name }}</b><div v-if="fila.phone" class="muted small"><i class="pi pi-phone" style="font-size: 10px" /> {{ fila.phone }}</div></span></span></template>
             <template #c-dias="{ fila }"><div class="row" style="gap: 3px"><span v-for="x in diasOrden" :key="x" class="dia" :class="{ on: fila.days.includes(x) }">{{ DSH[x][0] }}</span></div></template>
             <template #c-cost="{ fila }">{{ money(fila.cost) }}</template>
             <template #c-anticipo="{ fila }"><span :style="{ color: fila.deposit_amount ? '#a86717' : '' }">{{ anticipo(fila) }}</span></template>

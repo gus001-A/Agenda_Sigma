@@ -329,7 +329,7 @@ class CitasController extends Controller
         $hoy = now()->format('Y-m-d');
 
         return response()->json(Patient::query()
-            ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('name', 'like', "%{$q}%")->orWhere('sigma_id', 'like', "%{$q}%")
+            ->when($q !== '', fn ($w) => $w->where(fn ($x) => $x->where('name', 'like', "%{$q}%")->orWhere('sigma_id', 'like', "%{$q}%")->orWhere('curp', 'like', "{$q}%")
                 ->orWhereRaw("REPLACE(phone, ' ', '') like ?", ["%{$tel}%"])))
             ->orderBy('name')->limit(8)->withCount(['appointments as previas' => fn ($x) => $x->where('date', '<', $hoy)])->get()
             ->map(fn ($p) => $p->resumen() + ['previas' => $p->previas]));

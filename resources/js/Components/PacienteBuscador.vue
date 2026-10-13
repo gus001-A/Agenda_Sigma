@@ -48,7 +48,7 @@ async function darAlta() {
         <div style="flex: 1; min-width: 0">
             <b style="font-weight: 500">{{ modelValue.name }}</b>
             <div class="muted small">
-                {{ modelValue.sigma_id }}, {{ modelValue.age }} años, tel. {{ modelValue.phone }}
+                {{ modelValue.sigma_id }}<template v-if="modelValue.age !== null">, {{ modelValue.age }} años</template><template v-if="modelValue.phone">, tel. {{ modelValue.phone }}</template><template v-else>, sin teléfono</template>
                 <template v-if="modelValue.previas !== undefined">, {{ modelValue.previas ? modelValue.previas + ' citas previas' : 'paciente nuevo' }}</template>
             </div>
         </div>
@@ -70,12 +70,12 @@ async function darAlta() {
     <div v-else>
         <IconField>
             <InputIcon class="pi pi-search" />
-            <InputText v-model="q" :placeholder="placeholder || 'Busca por nombre, teléfono o ID SIGMA24'" autocomplete="off" fluid />
+            <InputText v-model="q" :placeholder="placeholder || 'Busca por nombre, teléfono, CURP o ID SIGMA24'" autocomplete="off" fluid />
         </IconField>
         <div class="pick" style="margin-top: 6px">
             <button v-if="opcional" type="button" @click="elegir(null)"><span class="muted">Sin paciente (evento interno)</span></button>
             <button v-for="p in resultados" :key="p.id" type="button" @click="elegir(p)">
-                <b style="font-weight: 500; flex: 1">{{ p.name }}</b><span class="muted small">{{ p.sigma_id }}, {{ p.age }} años</span>
+                <b style="font-weight: 500; flex: 1">{{ p.name }}</b><span class="muted small">{{ p.sigma_id }}<template v-if="p.age !== null">, {{ p.age }} años</template><template v-if="p.curp">, {{ p.curp }}</template></span>
             </button>
             <button v-if="permitirAlta" type="button" style="color: var(--primary)" @click="alta = true"><i class="pi pi-plus" /> Dar de alta paciente nuevo</button>
         </div>
