@@ -9,7 +9,7 @@ class Doctor extends Model
 {
     protected $attributes = ['active' => true];
 
-    protected $fillable = ['name', 'specialty_id', 'phone', 'resource_id', 'cost', 'duration', 'deposit_mode', 'deposit_value', 'days', 'start_time', 'end_time', 'notes', 'active'];
+    protected $fillable = ['legacy_id', 'name', 'specialty_id', 'phone', 'resource_id', 'cost', 'duration', 'deposit_mode', 'deposit_value', 'days', 'start_time', 'end_time', 'notes', 'active'];
 
     protected $casts = ['days' => 'array', 'active' => 'boolean', 'cost' => 'float', 'deposit_value' => 'float', 'duration' => 'integer'];
 

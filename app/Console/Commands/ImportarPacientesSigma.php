@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\LimpiaDatosSigma;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  */
 class ImportarPacientesSigma extends Command
 {
+    use LimpiaDatosSigma;
+
     protected $signature = 'sigma:importar-pacientes {--todos : Incluir pacientes no vigentes}';
 
     protected $description = 'Importa los pacientes de la base heredada de SIGMA (sigma2024)';
@@ -72,25 +75,11 @@ class ImportarPacientesSigma extends Command
         }
     }
 
-    /** Corrige textos guardados dos veces en UTF-8 (ej. "NIÃ‘O" → "NIÑO"). */
-    private function texto(?string $s): string
-    {
-        $s = trim((string) $s);
-        if ($s !== '' && preg_match('/[ÃÂ]/u', $s)) {
-            $reparado = mb_convert_encoding($s, 'Windows-1252', 'UTF-8');
-            if (mb_check_encoding($reparado, 'UTF-8')) {
-                $s = $reparado;
-            }
-        }
-
-        return preg_replace('/\s+/u', ' ', $s);
-    }
-
     private function nombre(object $p): string
     {
         $completo = trim(implode(' ', array_filter([$this->texto($p->nombre_p), $this->texto($p->apaterno_p), $this->texto($p->amaterno_p)])));
 
-        return mb_convert_case(mb_strtolower($completo, 'UTF-8'), MB_CASE_TITLE, 'UTF-8') ?: 'Sin nombre';
+        return $this->propio($completo) ?: 'Sin nombre';
     }
 
     private function curp(?string $c): ?string
@@ -98,27 +87,6 @@ class ImportarPacientesSigma extends Command
         $c = mb_strtoupper(str_replace(' ', '', $this->texto($c)), 'UTF-8');
 
         return preg_match('/^[A-ZÑ0-9]{16,18}$/u', $c) ? $c : null;
-    }
-
-    /** Deja el teléfono a 10 dígitos con el formato de la agenda (777 123 4567). */
-    private function telefono(?string $t): ?string
-    {
-        $d = preg_replace('/\D/', '', (string) $t);
-        if (strlen($d) > 10 && str_starts_with($d, '52')) {
-            $d = substr($d, 2);
-        }
-        if (strlen($d) !== 10 || preg_match('/^(\d)\1+$/', $d)) {
-            return null;
-        }
-
-        return substr($d, 0, 3).' '.substr($d, 3, 3).' '.substr($d, 6);
-    }
-
-    private function correo(?string $e): ?string
-    {
-        $e = strtolower(trim((string) $e));
-
-        return filter_var($e, FILTER_VALIDATE_EMAIL) ? $e : null;
     }
 
     private function fecha(?string $f): ?string

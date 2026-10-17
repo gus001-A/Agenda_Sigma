@@ -10,7 +10,7 @@ class Specialty extends Model
 {
     protected $attributes = ['active' => true];
 
-    protected $fillable = ['name', 'description', 'default_cost', 'first_form_id', 'sub_form_id', 'active'];
+    protected $fillable = ['legacy_id', 'name', 'description', 'default_cost', 'first_form_id', 'sub_form_id', 'active'];
 
     protected $casts = ['active' => 'boolean', 'default_cost' => 'float'];
 
