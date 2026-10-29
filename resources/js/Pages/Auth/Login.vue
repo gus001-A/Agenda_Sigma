@@ -2,10 +2,15 @@
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 
-defineProps({ canResetPassword: Boolean, status: String });
+defineProps({ canResetPassword: Boolean, status: String, accesosDemo: { type: Array, default: () => [] } });
 const page = usePage();
 const form = useForm({ email: '', password: '', remember: false });
 const enviar = () => form.post(route('login'), { onFinish: () => form.reset('password') });
+const entrarComo = (a) => {
+    form.email = a.email;
+    form.password = a.password;
+    enviar();
+};
 </script>
 
 <template>
@@ -33,5 +38,29 @@ const enviar = () => form.post(route('login'), { onFinish: () => form.reset('pas
             </div>
             <Button type="submit" label="Entrar" icon="pi pi-sign-in" :loading="form.processing" fluid />
         </form>
+        <section v-if="accesosDemo.length" class="demo">
+            <p class="demo__t"><i class="pi pi-bolt" />Accesos de demostración (solo desarrollo)</p>
+            <div class="demo__grid">
+                <button v-for="a in accesosDemo" :key="a.email" type="button" class="demo__btn" :disabled="form.processing" :title="`Entrar como ${a.email}`" @click="entrarComo(a)">
+                    <span class="demo__ic" :style="{ background: a.color }"><i :class="a.icono" /></span>
+                    <span class="demo__txt"><b>{{ a.rol }}</b><small>{{ a.email.split('@')[0] }}</small></span>
+                </button>
+            </div>
+        </section>
     </GuestLayout>
 </template>
+
+<style scoped>
+.demo { border: 1px dashed var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); }
+.demo__t { margin: 0 0 10px; text-align: center; font-size: 12px; color: var(--muted); }
+.demo__t .pi { color: var(--accent); margin-right: 6px; font-size: 11px; }
+.demo__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.demo__btn { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; text-align: left; font: inherit; color: var(--ink); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.demo__btn:hover:not(:disabled) { border-color: var(--navy-100); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.demo__btn:disabled { opacity: 0.6; cursor: wait; }
+.demo__ic { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 13px; }
+.demo__txt { min-width: 0; display: grid; line-height: 1.2; }
+.demo__txt b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.demo__txt small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 420px) { .demo__grid { grid-template-columns: 1fr; } }
+</style>
