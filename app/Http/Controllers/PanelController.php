@@ -42,7 +42,7 @@ class PanelController extends Controller
 
         // Lista de espera: primero la prioridad alta y, dentro de cada prioridad, quien lleva más tiempo esperando.
         $espera = WaitlistEntry::with('patient:id,name,phone', 'specialty:id,name', 'doctor:id,name')->where('status', 'En espera')
-            ->orderByRaw("FIELD(priority, 'Alta', 'Media', 'Baja')")->orderBy('requested_at')->get();
+            ->orderByRaw("CASE priority WHEN 'Alta' THEN 1 WHEN 'Media' THEN 2 ELSE 3 END")->orderBy('requested_at')->get();
 
         return Inertia::render('Panel', [
             'fecha' => $hoy,

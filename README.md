@@ -3,15 +3,16 @@
 Sistema integral de agenda médica, espacios (quirófanos, consultorios, salas), anticipos, lista de espera,
 notificaciones y **historia clínica digital previa a la consulta** para Clínica San Antonio.
 
-**Stack:** Laravel 12 · Inertia.js · Vue 3 · PrimeVue 4 (tema Aura personalizado) · Tailwind · MySQL 8.
+**Stack:** Laravel 12 · Inertia.js · Vue 3 · PrimeVue 4 (tema Aura personalizado) · Tailwind · SQLite.
 
 ## Instalación local
 
 ```bash
 composer install
 npm install
-cp .env.example .env   # ajustar DB_* (MySQL) y APP_URL
+cp .env.example .env   # ajustar APP_URL
 php artisan key:generate
+touch database/database.sqlite   # base de datos SQLite (si no existe)
 php artisan migrate --seed
 npm run build
 php artisan serve --port=8030
@@ -70,6 +71,7 @@ php artisan schedule:work      # en producción: cron con "php artisan schedule:
 - **WhatsApp / SMS:** `config/mensajeria.php` (driver `log` por defecto). Agregar el proveedor en `App\Services\Mensajeria::despachar()`.
 - **Correo:** `MENSAJERIA_CORREO=mail` usa el mailer de Laravel.
 - **SIGMA24:** los pacientes se identifican por `sigma_id` (único); la sincronización con el expediente existente se conecta en `Patient`.
+- **Base de datos:** la agenda usa SQLite (`database/database.sqlite`). Solo la importación desde la base heredada de SIGMA (`sigma:importar-*`) lee de MySQL mediante la conexión `sigma` (`SIGMA_DB_*`).
 
 ## Pruebas
 

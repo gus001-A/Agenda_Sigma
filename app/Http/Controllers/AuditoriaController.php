@@ -19,7 +19,7 @@ class AuditoriaController extends Controller
             'filtros' => (object) $f->all(),
             'acciones' => AuditLog::distinct()->orderBy('action')->pluck('action'),
             'registros' => AuditLog::query()
-                ->when($f->get('fecha'), fn ($q, $v) => $q->whereRaw("DATE_FORMAT(created_at, '%d/%m/%Y %H:%i') like ?", ["%{$v}%"]))
+                ->when($f->get('fecha'), fn ($q, $v) => $q->whereRaw("strftime('%d/%m/%Y %H:%M', created_at) like ?", ["%{$v}%"]))
                 ->when($f->get('user'), fn ($q, $v) => $q->where('user_name', 'like', "%{$v}%"))
                 ->when($f->get('action'), fn ($q, $v) => $q->where('action', $v))
                 ->when($f->get('detail'), fn ($q, $v) => $q->where('detail', 'like', "%{$v}%"))

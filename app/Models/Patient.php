@@ -27,7 +27,7 @@ class Patient extends Model
     /** Siguiente identificador SIGMA24 disponible (SG-#####), continuando la numeración de SIGMA. */
     public static function nextSigmaId(): string
     {
-        $max = static::query()->where('sigma_id', 'like', 'SG-%')->selectRaw('MAX(CAST(SUBSTRING(sigma_id, 4) AS UNSIGNED)) as m')->value('m') ?? 10223;
+        $max = static::query()->where('sigma_id', 'like', 'SG-%')->selectRaw('MAX(CAST(SUBSTR(sigma_id, 4) AS INTEGER)) as m')->value('m') ?? 10223;
 
         return 'SG-'.($max + 1);
     }
