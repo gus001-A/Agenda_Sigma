@@ -38,21 +38,20 @@ class CatalogosController extends Controller
         } elseif ($tab === 'rec') {
             $data['espacios'] = Resource::orderBy('id')->get();
         } else {
-            // Filtros por columna (búsqueda bajo cada encabezado de la tabla).
-            $f = collect($request->input('f', []))->only(['sigma_id', 'name', 'curp', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
+            // Filtros por columna (búsqueda al pie de cada columna de la tabla).
+            $f = collect($request->input('f', []))->only(['name', 'curp', 'phone', 'email'])->filter(fn ($v) => $v !== null && $v !== '');
             $data['filtros'] = (object) $f->all();
-            $porPagina = 12;
+            $porPagina = min(40, max(5, (int) $request->input('per_page', 12)));
             $data['pacientes'] = Patient::query()
-                ->when($f->get('sigma_id'), fn ($w, $v) => $w->where('sigma_id', 'like', "%{$v}%"))
                 ->when($f->get('name'), fn ($w, $v) => $w->where('name', 'like', "%{$v}%"))
                 ->when($f->get('curp'), fn ($w, $v) => $w->where('curp', 'like', '%'.mb_strtoupper($v).'%'))
-                ->when($f->get('phone'), fn ($w, $v) => $w->whereRaw("REPLACE(phone, ' ', '') like ?", ['%'.str_replace(' ', '', $v).'%']))
+                ->when($f->get('phone'), fn ($w, $v) => $w->whereRaw("REPLACE(phone, ' ', '') like ?", ['%'.preg_replace('/\D/', '', $v).'%']))
                 ->when($f->get('email'), fn ($w, $v) => $w->where('email', 'like', "%{$v}%"))
                 ->withCount('appointments')->orderBy('name')->paginate($porPagina)->withQueryString()
                 ->through(function (Patient $p) {
                     $ultima = Appointment::with('specialty:id,name')->where('patient_id', $p->id)->whereIn('hc_status', ['Completado', 'Revisado'])->orderByDesc('date')->first();
 
-                    return $p->resumen() + ['citas' => $p->appointments_count, 'ultima' => $ultima ? ['date' => $ultima->dateString(), 'specialty' => $ultima->specialty->name] : null];
+                    return $p->resumen() + $p->traza() + ['citas' => $p->appointments_count, 'ultima' => $ultima ? ['date' => $ultima->dateString(), 'specialty' => $ultima->specialty->name] : null];
                 });
         }
 
@@ -81,40 +80,6 @@ class CatalogosController extends Controller
             'deposit_mode' => ['required', Rule::in(['monto', 'porcentaje'])], 'deposit_value' => 'required|numeric|min:0',
             'days' => 'required|array|min:1', 'days.*' => 'integer|between:0,6', 'start_time' => 'required|date_format:H:i', 'end_time' => 'required|date_format:H:i',
             'notes' => 'nullable|string|max:255', 'active' => 'boolean', 'email' => 'nullable|email|max:255'];
-    }
-
-    /** Vista previa de la agenda que generaría la configuración (y citas que quedarían fuera). */
-    public function vistaPreviaMedico(Request $request): JsonResponse
-    {
-        $v = $request->validate(['id' => 'nullable|exists:doctors,id', 'days' => 'array', 'start_time' => 'required|date_format:H:i', 'end_time' => 'required|date_format:H:i',
-            'duration' => 'required|integer|min:5', 'cost' => 'nullable|numeric', 'deposit_mode' => 'nullable', 'deposit_value' => 'nullable|numeric']);
-        $dias = array_map('intval', $v['days'] ?? []);
-        $a = Agenda::min($v['start_time']);
-        $b = Agenda::min($v['end_time']);
-        if (! $dias || $b <= $a) {
-            return response()->json(['valido' => false]);
-        }
-        $tmp = new Doctor(['days' => $dias, 'start_time' => $v['start_time'], 'end_time' => $v['end_time'], 'duration' => $v['duration'], 'active' => true,
-            'cost' => $v['cost'] ?? 0, 'deposit_mode' => $v['deposit_mode'] ?? 'monto', 'deposit_value' => $v['deposit_value'] ?? 0]);
-        $tmp->id = $v['id'] ?? 0;
-        $hoy = now()->format('Y-m-d');
-        $sig = $hoy;
-        for ($i = 0; $i < 14 && ! in_array(Agenda::diaSemana($sig), $dias, true); $i++) {
-            $sig = Agenda::sumarDias($sig, 1);
-        }
-        $esp = collect((new Agenda($sig, $sig))->espacios($tmp, $sig))->where('off', false)->map(fn ($s) => ['time' => $s['time'], 'state' => $s['state']])->values();
-        $fuera = 0;
-        if (! empty($v['id'])) {
-            $fuera = Appointment::active()->where('doctor_id', $v['id'])->where('date', '>=', $hoy)->get()->filter(function ($x) use ($dias, $a, $b, $v) {
-                $m = Agenda::min($x->time);
-
-                return ! in_array(Agenda::diaSemana($x->dateString()), $dias, true) || $m < $a || $m + (int) $v['duration'] > $b || ($m - $a) % (int) $v['duration'] !== 0;
-            })->count();
-        }
-        $n = intdiv($b - $a, (int) $v['duration']);
-
-        return response()->json(['valido' => true, 'porDia' => $n, 'porSemana' => $n * count($dias), 'anticipo' => $tmp->depositAmount(),
-            'siguiente' => $sig, 'espacios' => $esp, 'fuera' => $fuera]);
     }
 
     public function guardarMedico(Request $request, ?Doctor $medico = null): JsonResponse
@@ -160,8 +125,15 @@ class CatalogosController extends Controller
     {
         // Los expedientes importados de SIGMA pueden no tener fecha ni teléfono; solo el alta nueva los exige.
         $req = $paciente?->exists ? 'nullable' : 'required';
-        $v = $request->validate(['name' => 'required|string|max:255', 'birth_date' => "{$req}|date|before_or_equal:today", 'phone' => "{$req}|string|max:30",
-            'email' => 'nullable|email|max:255'], [], ['name' => 'nombre completo', 'birth_date' => 'fecha de nacimiento', 'phone' => 'teléfono']);
+        // El teléfono solo lleva dígitos: se quitan espacios y guiones y se exigen 10.
+        if ($request->filled('phone')) {
+            $request->merge(['phone' => preg_replace('/\D/', '', (string) $request->input('phone'))]);
+        }
+        $v = $request->validate(['name' => 'required|string|max:255', 'birth_date' => "{$req}|date|before_or_equal:today", 'phone' => "{$req}|digits:10",
+            'email' => 'nullable|email|max:255'], ['phone.digits' => 'El teléfono debe tener 10 dígitos.'], ['name' => 'nombre completo', 'birth_date' => 'fecha de nacimiento', 'phone' => 'teléfono']);
+        if (! empty($v['phone'])) {
+            $v['phone'] = substr($v['phone'], 0, 3).' '.substr($v['phone'], 3, 3).' '.substr($v['phone'], 6);
+        }
         if ($paciente?->exists) {
             $paciente->update($v);
             Auditoria::log('Paciente editado', "{$paciente->name} ({$paciente->sigma_id})", pacienteId: $paciente->id);
@@ -171,13 +143,13 @@ class CatalogosController extends Controller
         // Alta controlada: se evita duplicar expedientes con el mismo nombre y fecha de nacimiento.
         $dup = Patient::whereRaw('LOWER(name) = ?', [mb_strtolower($v['name'])])->whereDate('birth_date', $v['birth_date'])->first();
         if ($dup) {
-            return response()->json(['ok' => false, 'duplicado' => true, 'message' => "Ya existe {$dup->name} ({$dup->sigma_id}). Se seleccionó el expediente existente.",
+            return response()->json(['ok' => false, 'duplicado' => true, 'message' => "Ya existe {$dup->name}. Se seleccionó el expediente existente.",
                 'patient' => $dup->resumen() + ['previas' => 0]], 409);
         }
         $p = Patient::create($v + ['sigma_id' => Patient::nextSigmaId()]);
         Auditoria::log('Alta de paciente', "{$p->name} ({$p->sigma_id})", pacienteId: $p->id);
 
-        return response()->json(['ok' => true, 'message' => "Paciente dado de alta con ID {$p->sigma_id}", 'patient' => $p->resumen() + ['previas' => 0]]);
+        return response()->json(['ok' => true, 'message' => 'Paciente dado de alta', 'patient' => $p->resumen() + ['previas' => 0]]);
     }
 
     /** Historial de citas de un paciente (expediente resumido). */

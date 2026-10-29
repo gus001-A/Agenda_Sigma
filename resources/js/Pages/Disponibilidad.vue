@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Fecha from '@/Components/Fecha.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Persona from '@/Components/Persona.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { filtrar } from '@/lib/api';
 import { fmtD, money, hoyISO } from '@/lib/util';
@@ -32,7 +33,7 @@ const columnas = computed(() => [
 
 <template>
     <AppLayout titulo="Próxima disponibilidad" subtitulo="Primeras 8 fechas con espacio en los próximos 60 días">
-        <div class="card pad">
+        <div class="card pad barra-filtros">
             <div class="grid4">
                 <div class="field"><label><i class="pi pi-bookmark" style="color: var(--teal)" /> Especialidad</label><Select :model-value="filtros.spec" :options="op.especialidades" option-label="name" option-value="id" placeholder="Cualquier especialidad" show-clear @update:model-value="ir({ spec: $event })" /></div>
                 <div class="field"><label><i class="pi pi-user" style="color: var(--teal)" /> Médico</label><Select :model-value="filtros.doc" :options="medicos" option-label="name" option-value="id" placeholder="Cualquier médico" show-clear filter @update:model-value="ir({ doc: $event })" /></div>
@@ -42,11 +43,11 @@ const columnas = computed(() => [
         </div>
         <TablaDatos v-if="resultados.length" :filas="filas" :columnas="columnas" clave="_id">
             <template #c-fecha="{ fila }"><b style="font-weight: 600">{{ fila.fecha }}</b> <span v-if="fila.date === hoyISO()" class="tag">hoy</span></template>
-            <template #c-doctor="{ fila }"><b style="font-weight: 600">{{ fila.doctor }}</b><div class="muted small">{{ fila.duration }} min · {{ money(fila.cost) }}</div></template>
+            <template #c-doctor="{ fila }"><Persona :nombre="fila.doctor" :detalle="`${fila.duration} min · ${money(fila.cost)}`" /></template>
             <template #c-espacios="{ fila }"><span class="chip plain s-disp">{{ fila.espacios }}</span></template>
             <template #c-times="{ fila }">
                 <div class="times">
-                    <button v-for="t in fila.times.slice(0, 14)" :key="t" type="button" :title="'Agendar ' + t" @click="agendar(fila, t)">{{ t }}</button>
+                    <button v-for="t in fila.times.slice(0, 14)" :key="t" type="button" :class="t < '14:00' ? 'manana' : 'tarde'" :title="'Agendar ' + t" @click="agendar(fila, t)">{{ t }}</button>
                     <span v-if="fila.times.length > 14" class="muted small">+{{ fila.times.length - 14 }}</span>
                 </div>
             </template>

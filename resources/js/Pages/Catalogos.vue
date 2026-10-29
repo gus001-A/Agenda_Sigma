@@ -1,7 +1,7 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
 import SeccionModal from '@/Components/SeccionModal.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
@@ -9,9 +9,10 @@ import Fecha from '@/Components/Fecha.vue';
 import Hora from '@/Components/Hora.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
 import Accion from '@/Components/Accion.vue';
+import Traza from '@/Components/Traza.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
-import { money, fmtDS, fmtDL, DIAS, DSH, CLASE_ESTADO, hoyISO, initials } from '@/lib/util';
+import { money, fmtDS, DIAS, DSH, hoyISO, initials } from '@/lib/util';
 
 const props = defineProps({ tab: String, formatos: Array, especialidades: Array, medicos: Array, espacios: Array, pacientes: Object, filtros: Object });
 const page = usePage();
@@ -31,19 +32,12 @@ async function guardarEsp() {
 
 // ---------- médico ----------
 const med = ref(null);
-const vista = ref(null);
 function abrirMed(d) {
     med.value = d ? { id: d.id, name: d.name, specialty_id: d.specialty_id, phone: d.phone, resource_id: d.resource_id, cost: d.cost, duration: d.duration, deposit_mode: d.deposit_mode,
         deposit_value: d.deposit_value, days: [...d.days], start_time: d.start_time, end_time: d.end_time, notes: d.notes, active: d.active }
         : { name: '', specialty_id: op.value.especialidades[0]?.id, phone: '', resource_id: null, cost: 800, duration: 30, deposit_mode: 'monto', deposit_value: 0, days: [1, 3, 5], start_time: '08:00', end_time: '14:00', notes: '', active: true, email: '' };
 }
 function toggleDia(x, on) { const s = new Set(med.value.days); on ? s.add(x) : s.delete(x); med.value.days = [...s]; }
-let t = null;
-watch(med, (m) => {
-    if (!m) { vista.value = null; return; }
-    clearTimeout(t);
-    t = setTimeout(async () => { vista.value = await api.post(route('api.medicos.preview'), m, { silencioso: true }).catch(() => null); }, 250);
-}, { deep: true });
 async function guardarMed() {
     const r = med.value.id ? await api.put(route('api.medicos.update', med.value.id), med.value) : await api.post(route('api.medicos.store'), med.value);
     avisar(r.message); med.value = null; refrescar();
@@ -60,7 +54,7 @@ async function guardarRec() {
 
 // ---------- paciente ----------
 const pac = ref(null);
-const abrirPac = (p) => { pac.value = p ? { id: p.id, sigma_id: p.sigma_id, name: p.name, birth_date: p.birth_date, phone: p.phone, email: p.email } : { name: '', birth_date: null, phone: '', email: '' }; };
+const abrirPac = (p) => { pac.value = p ? { id: p.id, name: p.name, birth_date: p.birth_date, phone: (p.phone || '').replace(/\D/g, ''), email: p.email } : { name: '', birth_date: null, phone: '', email: '' }; };
 async function guardarPac() {
     try {
         const r = pac.value.id ? await api.put(route('api.pacientes.update', pac.value.id), pac.value) : await api.post(route('api.pacientes.store'), pac.value);
@@ -86,6 +80,7 @@ const colEsp = computed(() => [
     { campo: 'first_form.name', titulo: 'Primera consulta', filtro: 'lista', opciones: unicos(props.especialidades, 'first_form.name') },
     { campo: 'sub_form.name', titulo: 'Subsecuente', filtro: 'lista', opciones: unicos(props.especialidades, 'sub_form.name') },
     { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ['Activa', 'Inactiva'], ancho: '120px' },
+    { campo: 'created_by', titulo: 'Registró', filtro: 'texto', ancho: '150px' },
     { campo: 'acc', titulo: '', ordenar: false, ancho: '60px' },
 ]);
 const filasEsp = computed(() => (props.especialidades || []).map((e) => ({ ...e, estatus: e.active ? 'Activa' : 'Inactiva' })));
@@ -93,13 +88,14 @@ const filasMed = computed(() => (props.medicos || []).map((d) => ({ ...d, estatu
 const colMed = computed(() => [
     { campo: 'name', titulo: 'Médico', filtro: 'texto', ancho: '240px' },
     { campo: 'especialidad', titulo: 'Especialidad', filtro: 'lista', opciones: unicos(filasMed.value, 'especialidad') },
-    { campo: 'dias', titulo: 'Días', ordenar: false, ancho: '170px' },
+    { campo: 'dias', titulo: 'Días', ordenar: false, ancho: '230px' },
     { campo: 'horario', titulo: 'Horario', filtro: 'texto', ancho: '140px' },
     { campo: 'dur', titulo: 'Duración', filtro: 'lista', opciones: unicos(filasMed.value, 'dur') },
     { campo: 'cost', titulo: 'Costo', alinear: 'right' },
     { campo: 'anticipo', titulo: 'Anticipo', alinear: 'right', ordenar: false },
     { campo: 'consultorio', titulo: 'Consultorio', filtro: 'lista', opciones: unicos(filasMed.value, 'consultorio') },
     { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ESTATUS },
+    { campo: 'created_by', titulo: 'Registró', filtro: 'texto', ancho: '150px' },
     { campo: 'acc', titulo: '', ordenar: false, ancho: '140px' },
 ]);
 const filasRec = computed(() => (props.espacios || []).map((r) => ({ ...r, estatus: r.active ? 'Activo' : 'Inactivo', horario: r.opens_at + ' a ' + r.closes_at })));
@@ -113,10 +109,10 @@ const colRec = computed(() => [
     { campo: 'equipment', titulo: 'Equipamiento', filtro: 'texto' },
     { campo: 'responsible', titulo: 'Responsable', filtro: 'lista', opciones: unicos(filasRec.value, 'responsible') },
     { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ESTATUS },
+    { campo: 'created_by', titulo: 'Registró', filtro: 'texto', ancho: '150px' },
     { campo: 'acc', titulo: '', ordenar: false, ancho: '60px' },
 ]);
 const colPac = [
-    { campo: 'sigma_id', titulo: 'ID SIGMA24', filtro: 'texto', ancho: '130px' },
     { campo: 'name', titulo: 'Nombre', filtro: 'texto', ancho: '230px' },
     { campo: 'curp', titulo: 'CURP', filtro: 'texto', ancho: '200px' },
     { campo: 'age', titulo: 'Edad', alinear: 'right', ancho: '80px' },
@@ -124,6 +120,7 @@ const colPac = [
     { campo: 'email', titulo: 'Correo', filtro: 'texto' },
     { campo: 'citas', titulo: 'Citas', alinear: 'right', ancho: '80px' },
     { campo: 'ultima', titulo: 'Última historia clínica', ancho: '190px' },
+    { campo: 'created_by', titulo: 'Registró', ordenar: false, ancho: '150px' },
     { campo: 'acc', titulo: 'Acciones', ancho: '130px' },
 ];
 const ICONO_RECURSO = { Consultorio: 'pi pi-desktop', 'Quirófano': 'pi pi-heart', 'Sala de procedimientos': 'pi pi-briefcase', 'Sala de juntas': 'pi pi-users', 'Habitación': 'pi pi-home', 'Sala de rehabilitación': 'pi pi-bolt' };
@@ -131,7 +128,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
 </script>
 
 <template>
-    <AppLayout titulo="Catálogos" subtitulo="Especialidades, médicos y horarios, espacios y pacientes">
+    <AppLayout titulo="Catálogos" subtitulo="Especialidades, médicos y horarios, espacios y pacientes" sin-nueva-cita>
         <template #acciones>
             <Button v-if="tab === 'esp' && puede('config')" label="Nueva especialidad" icon="pi pi-plus" severity="secondary" outlined @click="abrirEsp()" />
             <Button v-if="tab === 'med' && puede('config')" label="Nuevo médico" icon="pi pi-user-plus" severity="secondary" outlined @click="abrirMed()" />
@@ -145,6 +142,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-name="{ fila }"><span class="row" style="gap: 10px; flex-wrap: nowrap"><span class="hic" style="--c: #0891b2"><i class="pi pi-bookmark" /></span><span><b style="font-weight: 600">{{ fila.name }}</b><div class="muted small">{{ fila.description }}</div></span></span></template>
             <template #c-default_cost="{ fila }">{{ money(fila.default_cost) }}</template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-acc="{ fila }"><Accion v-if="puede('config')" icono="pi pi-pencil" tip="Editar" color="azul" @click="abrirEsp(fila)" /></template>
         </TablaDatos>
 
@@ -155,6 +153,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-cost="{ fila }">{{ money(fila.cost) }}</template>
             <template #c-anticipo="{ fila }"><span :style="{ color: fila.deposit_amount ? '#a86717' : '' }">{{ anticipo(fila) }}</span></template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-acc="{ fila }"><Accion v-if="puede('config')" icono="pi pi-sliders-h" texto="Horario" color="verde" @click="abrirMed(fila)" /></template>
         </TablaDatos>
 
@@ -164,16 +163,17 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #c-cost="{ fila }">{{ fila.cost ? money(fila.cost) : '—' }}</template>
             <template #c-equipment="{ fila }"><span class="small">{{ fila.equipment }}</span></template>
             <template #c-estatus="{ fila }"><span class="chip" :class="fila.active ? 'hcom' : 's-aten'">{{ fila.estatus }}</span></template>
+            <template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-acc="{ fila }"><Accion v-if="puede('operativo')" icono="pi pi-pencil" tip="Editar" color="azul" @click="abrirRec(fila)" /></template>
         </TablaDatos>
 
         <!-- PACIENTES (filtrado en el servidor) -->
         <TablaDatos v-else :filas="pacientes.data" :columnas="colPac" lazy :total="pacientes.total" :primero="(pacientes.current_page - 1) * pacientes.per_page"
             :por-pagina="pacientes.per_page" :filtros-iniciales="filtros || {}" :cargando="cargando" @cambio="cambioPac">
-            <template #c-sigma_id="{ fila }"><code>{{ fila.sigma_id }}</code></template>
             <template #c-name="{ fila }"><b style="font-weight: 600">{{ fila.name }}</b></template>
             <template #c-email="{ fila }"><span class="small">{{ fila.email }}</span></template>
             <template #c-citas="{ fila }"><span class="chip plain s-agen">{{ fila.citas }}</span></template>
+            <template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-ultima="{ fila }"><template v-if="fila.ultima">{{ fmtDS(fila.ultima.date) }} <span class="muted small">{{ fila.ultima.specialty }}</span></template><span v-else class="muted">—</span></template>
             <template #c-acc="{ fila }">
                 <div class="accs">
@@ -210,54 +210,36 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
         <Modal icono="pi pi-user" color="#1f9e86" subtitulo="La agenda se genera automáticamente a partir de este horario" :visible="!!med" :header="med?.id ? 'Configurar a ' + med.name : 'Nuevo médico'" ancho="1000px" @update:visible="med = null">
             <template v-if="med">
                 <div class="nc-grid">
-                    <div class="nc-col">
-                        <SeccionModal paso="1" titulo="Datos del médico" icono="pi pi-id-card" color="#2b5480">
-                            <template #extra><label class="chk"><ToggleSwitch v-model="med.active" />Activo</label></template>
-                            <div class="field"><label>Nombre completo</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="med.name" fluid /></div></div>
-                            <div class="grid2">
-                                <div class="field"><label>Especialidad</label><Select v-model="med.specialty_id" :options="op.especialidades" option-label="name" option-value="id" fluid /></div>
-                                <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="med.phone" fluid /></div></div>
-                            </div>
-                            <div class="grid2">
-                                <div class="field"><label>Consultorio</label><Select v-model="med.resource_id" :options="op.recursos" option-label="name" option-value="id" show-clear fluid /></div>
-                                <div v-if="!med.id" class="field"><label>Correo del usuario (opcional)</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="med.email" type="email" fluid /></div></div>
-                            </div>
-                        </SeccionModal>
-                        <SeccionModal paso="2" titulo="Horario de atención" icono="pi pi-calendar-clock" color="#1f9e86">
-                            <div class="field"><label>Días de atención</label>
-                                <div class="pills"><label v-for="x in diasOrden" :key="x"><input type="checkbox" :checked="med.days.includes(x)" @change="toggleDia(x, $event.target.checked)" />{{ DIAS[x] }}</label></div>
-                            </div>
-                            <div class="grid3">
-                                <div class="field"><label>Hora inicial</label><Hora v-model="med.start_time" /></div>
-                                <div class="field"><label>Hora final</label><Hora v-model="med.end_time" /></div>
-                                <div class="field"><label>Duración</label><Select v-model="med.duration" :options="[15, 20, 30, 40, 45, 50, 60].map((x) => ({ l: x + ' min', v: x }))" option-label="l" option-value="v" fluid /></div>
-                            </div>
-                        </SeccionModal>
-                        <SeccionModal paso="3" titulo="Costos y anticipo" icono="pi pi-wallet" color="#e08a1e">
-                            <div class="grid3">
-                                <div class="field"><label>Costo de consulta</label><InputNumber v-model="med.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
-                                <div class="field"><label>Tipo de anticipo</label><Select v-model="med.deposit_mode" :options="[{ l: 'Monto fijo', v: 'monto' }, { l: 'Porcentaje', v: 'porcentaje' }]" option-label="l" option-value="v" fluid /></div>
-                                <div class="field"><label>{{ med.deposit_mode === 'porcentaje' ? 'Porcentaje' : 'Monto' }}</label><InputNumber v-model="med.deposit_value" :min="0" :suffix="med.deposit_mode === 'porcentaje' ? ' %' : ''" :prefix="med.deposit_mode === 'porcentaje' ? '' : '$ '" fluid /></div>
-                            </div>
-                            <div class="field"><label>Observaciones</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText v-model="med.notes" placeholder="Opcional" fluid /></div></div>
-                        </SeccionModal>
-                    </div>
-                    <div class="nc-col">
-                        <div class="resumen-cita">
-                            <h4><i class="pi pi-eye" /> Vista previa de la agenda</h4>
-                            <template v-if="vista && vista.valido">
-                                <div class="rc-row"><i class="pi pi-calendar" /><span>Consultas por día</span><b>{{ vista.porDia }}</b></div>
-                                <div class="rc-row"><i class="pi pi-chart-bar" /><span>Por semana</span><b>{{ vista.porSemana }}</b></div>
-                                <div class="rc-row"><i class="pi pi-wallet" /><span>Anticipo calculado</span><b>{{ money(vista.anticipo) }}</b></div>
-                                <div class="rc-row"><i class="pi pi-forward" /><span>Próximo día</span><b>{{ fmtDL(vista.siguiente) }}</b></div>
-                            </template>
-                            <div v-else class="rc-nota"><i class="pi pi-info-circle" /><span>Selecciona al menos un día y un horario válido.</span></div>
+                    <SeccionModal paso="1" titulo="Datos del médico" icono="pi pi-id-card" color="#2b5480">
+                        <template #extra><label class="chk"><ToggleSwitch v-model="med.active" />Activo</label></template>
+                        <div class="field"><label>Nombre completo</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="med.name" fluid /></div></div>
+                        <div class="grid2">
+                            <div class="field"><label>Especialidad</label><Select v-model="med.specialty_id" :options="op.especialidades" option-label="name" option-value="id" fluid /></div>
+                            <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="med.phone" fluid /></div></div>
                         </div>
-                        <SeccionModal v-if="vista && vista.valido" titulo="Espacios generados" icono="pi pi-th-large" color="#173a5f" :ayuda="'Ejemplo: ' + fmtDL(vista.siguiente)">
-                            <div class="times"><span v-for="s in vista.espacios" :key="s.time" class="chip plain" :class="CLASE_ESTADO[s.state]" :title="s.state">{{ s.time }} {{ s.state === 'Disponible' ? '' : s.state.toLowerCase() }}</span></div>
-                            <p v-if="vista.fuera" class="note warn small"><i class="pi pi-exclamation-triangle" /> {{ vista.fuera }} citas futuras quedan fuera del nuevo horario. Seguirán visibles marcadas como fuera de horario para que las reagendes.</p>
-                        </SeccionModal>
-                    </div>
+                        <div class="grid2">
+                            <div class="field"><label>Consultorio</label><Select v-model="med.resource_id" :options="op.recursos" option-label="name" option-value="id" show-clear fluid /></div>
+                            <div v-if="!med.id" class="field"><label>Correo del usuario (opcional)</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="med.email" type="email" fluid /></div></div>
+                        </div>
+                    </SeccionModal>
+                    <SeccionModal paso="2" titulo="Horario de atención" icono="pi pi-calendar-clock" color="#1f9e86">
+                        <div class="field"><label>Días de atención</label>
+                            <div class="pills"><label v-for="x in diasOrden" :key="x"><input type="checkbox" :checked="med.days.includes(x)" @change="toggleDia(x, $event.target.checked)" />{{ DIAS[x] }}</label></div>
+                        </div>
+                        <div class="grid3">
+                            <div class="field"><label>Hora inicial</label><Hora v-model="med.start_time" /></div>
+                            <div class="field"><label>Hora final</label><Hora v-model="med.end_time" /></div>
+                            <div class="field"><label>Duración</label><Select v-model="med.duration" :options="[15, 20, 30, 40, 45, 50, 60].map((x) => ({ l: x + ' min', v: x }))" option-label="l" option-value="v" fluid /></div>
+                        </div>
+                    </SeccionModal>
+                    <SeccionModal paso="3" titulo="Costos y anticipo" class="nc-ancho" icono="pi pi-wallet" color="#e08a1e">
+                        <div class="grid3">
+                            <div class="field"><label>Costo de consulta</label><InputNumber v-model="med.cost" mode="currency" currency="MXN" locale="es-MX" fluid /></div>
+                            <div class="field"><label>Tipo de anticipo</label><Select v-model="med.deposit_mode" :options="[{ l: 'Monto fijo', v: 'monto' }, { l: 'Porcentaje', v: 'porcentaje' }]" option-label="l" option-value="v" fluid /></div>
+                            <div class="field"><label>{{ med.deposit_mode === 'porcentaje' ? 'Porcentaje' : 'Monto' }}</label><InputNumber v-model="med.deposit_value" :min="0" :suffix="med.deposit_mode === 'porcentaje' ? ' %' : ''" :prefix="med.deposit_mode === 'porcentaje' ? '' : '$ '" fluid /></div>
+                        </div>
+                        <div class="field"><label>Observaciones</label><div class="campo-ic"><i class="pi pi-pencil" /><InputText v-model="med.notes" placeholder="Opcional" fluid /></div></div>
+                    </SeccionModal>
                 </div>
             </template>
             <template #footer><Button label="Cancelar" text @click="med = null" /><Button label="Guardar configuración" icon="pi pi-check" @click="guardarMed" /></template>
@@ -290,9 +272,8 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #footer><Button label="Cancelar" text @click="rec = null" /><Button label="Guardar espacio" icon="pi pi-check" @click="guardarRec" /></template>
         </Modal>
 
-        <Modal icono="pi pi-id-card" color="#2b5480" subtitulo="Se valida que el paciente no exista en SIGMA24" :visible="!!pac" :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" ancho="640px" @update:visible="pac = null">
+        <Modal icono="pi pi-id-card" color="#2b5480" subtitulo="Se valida que el paciente no esté registrado" :visible="!!pac" :header="pac?.id ? 'Editar paciente' : 'Alta de paciente'" ancho="640px" @update:visible="pac = null">
             <template v-if="pac">
-                <div v-if="pac.id" class="note"><i class="pi pi-id-card" /> ID SIGMA24: <code>{{ pac.sigma_id }}</code> (no editable)</div>
                 <SeccionModal titulo="Datos personales" icono="pi pi-user" color="#2b5480">
                     <div class="grid2">
                         <div class="field"><label>Nombre completo</label><div class="campo-ic"><i class="pi pi-user" /><InputText v-model="pac.name" fluid /></div></div>
@@ -301,7 +282,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
                 </SeccionModal>
                 <SeccionModal titulo="Contacto" icono="pi pi-phone" color="#16a34a" ayuda="Se usa para WhatsApp, SMS y correo">
                     <div class="grid2">
-                        <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="pac.phone" fluid /></div></div>
+                        <div class="field"><label>Teléfono</label><div class="campo-ic"><i class="pi pi-phone" /><InputText v-model="pac.phone" v-digitos="10" type="tel" placeholder="10 dígitos" fluid /></div></div>
                         <div class="field"><label>Correo</label><div class="campo-ic"><i class="pi pi-envelope" /><InputText v-model="pac.email" type="email" fluid /></div></div>
                     </div>
                 </SeccionModal>
@@ -309,7 +290,7 @@ const COLOR_RECURSO = { Consultorio: '#2b5480', 'Quirófano': '#d64545', 'Sala d
             <template #footer><Button label="Cancelar" text @click="pac = null" /><Button label="Guardar paciente" icon="pi pi-check" @click="guardarPac" /></template>
         </Modal>
 
-        <Modal icono="pi pi-history" color="#0891b2" subtitulo="Historial de citas del paciente" :visible="!!historial" :header="historial ? `${historial.patient.name} (${historial.patient.sigma_id})` : ''" ancho="820px" @update:visible="historial = null">
+        <Modal icono="pi pi-history" color="#0891b2" subtitulo="Historial de citas del paciente" :visible="!!historial" :header="historial ? historial.patient.name : ''" ancho="820px" @update:visible="historial = null">
             <SeccionModal v-if="historial" titulo="Citas" icono="pi pi-calendar" color="#0891b2" :ayuda="historial.citas.length + ' registradas · clic para ver el detalle'">
                 <div class="tbl-wrap"><table class="tbl">
                     <thead><tr><th>Fecha</th><th>Médico</th><th>Motivo</th><th>Estado</th><th>Historia</th></tr></thead>

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Model;
 
 class Block extends Model
 {
+    use Trazable;
+
     protected $fillable = ['scope', 'target_id', 'type', 'date', 'start_time', 'end_time', 'recurring', 'days', 'until', 'notes', 'created_by'];
 
     protected $casts = ['recurring' => 'boolean', 'days' => 'array', 'date' => 'date:Y-m-d', 'until' => 'date:Y-m-d'];

@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import DateNav from '@/Components/DateNav.vue';
 import HistoriaContenido from '@/Components/HistoriaContenido.vue';
+import Persona from '@/Components/Persona.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
 import { fmtDS, fmtDL, CLASE_HC, DIAS, parseISO } from '@/lib/util';
@@ -25,6 +26,7 @@ async function revisada() { const r = await api.post(route('api.citas.revisada',
             <DateNav :fecha="fecha" @cambiar="ir({ fecha: $event, cita: null })" />
         </div>
         <div v-if="!lista.length" class="card empty">
+            <i class="pi pi-calendar-times" style="font-size: 24px; color: #94a3b8" />
             <b>Sin pacientes este día</b>
             {{ doctor?.works ? 'La agenda aún no tiene citas.' : `${doctor?.name} no tiene consulta los ${DIAS[parseISO(fecha).getDay()].toLowerCase()}.` }}
         </div>
@@ -32,14 +34,14 @@ async function revisada() { const r = await api.post(route('api.citas.revisada',
             <div class="card">
                 <div v-for="x in lista" :key="x.id" class="list-item" :class="{ on: a && a.id === x.id }" @click="ir({ cita: x.id })">
                     <span class="time-b">{{ x.time }}</span>
-                    <div style="flex: 1; min-width: 0"><b style="font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ x.patient }}</b><span class="muted small">{{ x.type }}</span></div>
+                    <div style="flex: 1; min-width: 0"><Persona :nombre="x.patient" :detalle="x.type" /></div>
                     <span class="dot" :class="CLASE_HC[x.hc_status]" :title="x.hc_status" />
                 </div>
             </div>
             <div v-if="a" class="stack">
-                <div class="card pad stack">
+                <div class="card pad stack pc-head">
                     <div class="row" style="justify-content: space-between">
-                        <div><h2>{{ a.patient }}</h2><p class="muted small">{{ a.time }}, {{ a.type }}, {{ a.form }} v{{ a.version }}</p></div>
+                        <Persona class="pc-persona" :nombre="a.patient" :detalle="`${a.time} · ${a.type} · ${a.form} v${a.version}`" />
                         <div class="row"><Chip :valor="a.status" /><Chip :valor="a.hc_status" tipo="hc" /></div>
                     </div>
                     <div class="acts">

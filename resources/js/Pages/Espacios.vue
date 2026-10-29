@@ -1,13 +1,14 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
 import SeccionModal from '@/Components/SeccionModal.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import DateNav from '@/Components/DateNav.vue';
 import Fecha from '@/Components/Fecha.vue';
 import Hora from '@/Components/Hora.vue';
 import PacienteBuscador from '@/Components/PacienteBuscador.vue';
+import Traza from '@/Components/Traza.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar, filtrar } from '@/lib/api';
 import { mt, tm, fmtDL, money, hoyISO } from '@/lib/util';
@@ -19,16 +20,22 @@ const HPX = 84, TL0 = 7 * 60, TL1 = 21 * 60;
 const horas = []; for (let m = TL0; m < TL1; m += 60) horas.push(m);
 const X = (m) => ((Math.max(m, TL0) - TL0) / 60) * HPX;
 const W = (a, b) => Math.max(((Math.min(b, TL1) - Math.max(a, TL0)) / 60) * HPX - 2, 6);
+// Color e icono por tipo de recurso para distinguirlos de un vistazo.
+const TIPO = {
+    Consultorio: ['#2b5480', 'pi pi-building'], 'Quirófano': ['#db2777', 'pi pi-heart'], 'Sala de procedimientos': ['#e08a1e', 'pi pi-briefcase'],
+    'Sala de juntas': ['#6b4bc9', 'pi pi-users'], 'Habitación': ['#0e7490', 'pi pi-home'], 'Sala de rehabilitación': ['#16a34a', 'pi pi-bolt'], Otro: ['#64748b', 'pi pi-box'],
+};
+const tipoRecurso = (t) => TIPO[t] || TIPO.Otro;
 const ir = (c) => filtrar('espacios', { fecha: props.fecha, tipo: props.tipo, ...c });
 
 // ---------- reservación ----------
 const dlg = ref(false);
 const r = ref({});
 const paciente = ref(null);
-const checks = ref([]);
 const guardando = ref(false);
 const medicos = computed(() => [{ id: null, name: 'Sin médico' }, ...page.props.opciones.medicos]);
-const valida = computed(() => checks.value.length && checks.value.every((c) => c.ok) && r.value.procedure?.trim() && r.value.duration > 0);
+// La disponibilidad, horario, bloqueos y agenda del médico se validan al guardar.
+const valida = computed(() => r.value.resource_id && r.value.date && r.value.start_time && r.value.procedure?.trim() && r.value.duration > 0);
 
 function nueva(resourceId = null, start = null) {
     if (!puede('espacio')) return avisar('Tu rol no permite reservar espacios.', 'error');
@@ -39,16 +46,10 @@ function nueva(resourceId = null, start = null) {
 async function editar(id) {
     const x = await api.get(route('api.reservaciones.show', id));
     r.value = { id: x.id, resource_id: x.resource_id, date: x.date_s, start_time: x.start_time, duration: x.duration, doctor_id: x.doctor_id, procedure: x.procedure, notes: x.notes || '' };
-    paciente.value = x.patient ? { id: x.patient.id, name: x.patient.name, sigma_id: '', age: '', phone: '' } : null;
+    paciente.value = x.patient ? { id: x.patient.id, name: x.patient.name, age: '', phone: '' } : null;
     ver.value = null;
     dlg.value = true;
 }
-let t = null;
-watch(() => [dlg.value, r.value.resource_id, r.value.date, r.value.start_time, r.value.duration, r.value.doctor_id], () => {
-    if (!dlg.value) return;
-    clearTimeout(t);
-    t = setTimeout(async () => { checks.value = await api.post(route('api.reservaciones.validar'), { ...r.value }, { silencioso: true }).catch(() => []); }, 200);
-});
 async function guardar() {
     guardando.value = true;
     try {
@@ -94,8 +95,11 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
                     <div class="tl-lab"><small>Recurso</small></div>
                     <div class="tl-track"><span v-for="m in horas" :key="m" class="tl-hr" :style="{ left: X(m) + 'px' }">{{ mt(m) }}</span></div>
                 </div>
-                <div v-for="f in filas" :key="f.id" class="tl-row">
-                    <div class="tl-lab"><b>{{ f.name }}{{ f.active ? '' : ' (inactivo)' }}</b><small>{{ f.type }}, {{ f.location }}</small></div>
+                <div v-for="f in filas" :key="f.id" class="tl-row" :style="{ '--rc': tipoRecurso(f.type)[0] }">
+                    <div class="tl-lab">
+                        <span class="tl-ic"><i :class="tipoRecurso(f.type)[1]" /></span>
+                        <span><b>{{ f.name }}{{ f.active ? '' : ' (inactivo)' }}</b><small>{{ f.type }}, {{ f.location }}</small></span>
+                    </div>
                     <div class="tl-track" @click="clickPista($event, f)">
                         <div v-if="f.opens > TL0" class="tl-it blk inact" :style="{ left: 0, width: W(TL0, f.opens) + 'px' }" @click.stop>Cerrado</div>
                         <div v-if="f.closes < TL1" class="tl-it blk inact" :style="{ left: X(f.closes) + 'px', width: W(f.closes, TL1) + 'px' }" @click.stop>Cerrado</div>
@@ -108,7 +112,7 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
             </div>
         </div>
 
-        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Se valida disponibilidad, horario, bloqueos y agenda del médico" v-model:visible="dlg" :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" ancho="1000px">
+        <Modal icono="pi pi-building" color="#6b4bc9" subtitulo="Quirófanos, consultorios y salas" v-model:visible="dlg" :header="r.id ? 'Editar reservación' : 'Nueva reservación de espacio'" ancho="1000px">
             <div class="nc-grid">
                 <div class="nc-col">
                     <SeccionModal paso="1" titulo="Espacio y horario" icono="pi pi-building" color="#6b4bc9">
@@ -131,11 +135,6 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
                     <SeccionModal paso="3" titulo="Paciente" icono="pi pi-user" color="#2b5480" ayuda="Opcional para eventos internos">
                         <PacienteBuscador v-model="paciente" opcional :permitir-alta="false" />
                     </SeccionModal>
-                    <div class="resumen-cita">
-                        <h4><i class="pi pi-shield" /> Validación automática</h4>
-                        <div v-for="(c, i) in checks" :key="i" class="rc-row"><i class="pi" :class="c.ok ? 'pi-check' : 'pi-times'" :style="{ background: c.ok ? 'rgba(31,158,134,.45)' : 'rgba(214,69,69,.55)' }" /><span style="color: #fff">{{ c.t }}</span></div>
-                        <div v-if="!checks.length" class="rc-nota"><i class="pi pi-info-circle" /><span>Completa el espacio y el horario para validar.</span></div>
-                    </div>
                 </div>
             </div>
             <template #footer>
@@ -152,6 +151,7 @@ function clickItem(it) { if (it.kind === 'res') abrir(it.id); else if (it.kind =
                     <dt>Médico</dt><dd>{{ ver.doctor?.name || '—' }}</dd>
                     <dt>Paciente</dt><dd>{{ ver.patient?.name || '—' }}</dd>
                     <template v-if="ver.resource.cost"><dt>Costo del recurso</dt><dd>{{ money(ver.resource.cost) }}</dd></template>
+                    <dt>Registró</dt><dd><Traza :r="ver" /></dd>
                     <template v-if="ver.notes"><dt>Notas</dt><dd>{{ ver.notes }}</dd></template>
                     <dt>Registró</dt><dd>{{ ver.created_by }}</dd>
                 </dl>

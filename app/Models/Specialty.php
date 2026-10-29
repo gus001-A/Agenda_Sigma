@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Specialty extends Model
 {
+    use Trazable;
+
     protected $attributes = ['active' => true];
 
     protected $fillable = ['legacy_id', 'name', 'description', 'default_cost', 'first_form_id', 'sub_form_id', 'active'];

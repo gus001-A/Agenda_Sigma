@@ -6,6 +6,7 @@ import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Segmento from '@/Components/Segmento.vue';
 import CampoFormulario from '@/Components/CampoFormulario.vue';
+import Traza from '@/Components/Traza.vue';
 import { usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { fmtDS } from '@/lib/util';
@@ -87,6 +88,7 @@ async function crear() {
                 <a v-for="x in lista" :key="x.id" :class="{ on: formato && x.id === formato.id }" @click="elegir(x.id)">
                     <b>{{ x.name }}</b>
                     <span class="muted small">{{ x.specialty || 'Todas las especialidades' }}, {{ x.consult_type }}, v{{ x.version }}{{ x.draft ? ' (borrador)' : '' }}{{ x.active ? '' : ' (inactivo)' }}</span>
+                    <Traza :r="x" linea />
                 </a>
             </div>
             <div v-if="formato" class="stack">

@@ -74,6 +74,7 @@ class ImportarMedicosSigma extends Command
             ?? Specialty::whereNull('legacy_id')->get()->first(fn (Specialty $s) => Str::lower(Str::ascii($s->name)) === Str::lower(Str::ascii($nombre)))
             ?? new Specialty(['name' => $nombre]);
         $especialidad->legacy_id = $e->id_es;
+        $especialidad->created_by ??= self::AUTOR;
         $especialidad->save();
 
         return $especialidad;
@@ -108,6 +109,7 @@ class ImportarMedicosSigma extends Command
         ]);
         if ($nuevo) {
             $medico->fill(['cost' => $especialidad->default_cost ?? 0, 'duration' => 30]);
+            $medico->created_by = self::AUTOR;
         }
         $medico->save();
 
@@ -184,6 +186,7 @@ class ImportarMedicosSigma extends Command
                 'email' => $correo && ! User::where('email', $correo)->exists() ? $correo : 'medico'.$medico->id.'.'.Str::lower(Str::random(4)).'@clinicasanantonio.mx',
                 'role' => 'Médico', 'password' => Hash::make(Str::random(16)),
             ]);
+            $usuario->created_by = self::AUTOR;
         }
         $usuario->save();
     }

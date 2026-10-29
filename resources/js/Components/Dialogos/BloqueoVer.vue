@@ -1,10 +1,11 @@
 <script setup>
 import Modal from '@/Components/Modal.vue';
 import SeccionModal from '@/Components/SeccionModal.vue';
+import Traza from '@/Components/Traza.vue';
 import { ref, computed, watch } from 'vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
-import { fmtDL, fmtDS, fmtStamp, DIAS } from '@/lib/util';
+import { fmtDL, fmtDS, DIAS } from '@/lib/util';
 
 const { puede } = usePermisos();
 const visible = computed({ get: () => ui.dialogo === 'bloqueoVer', set: (v) => { if (!v) ui.cerrar(); } });
@@ -28,7 +29,7 @@ async function quitar() {
             <dt>Fecha</dt><dd>{{ b.recurring ? `Cada ${b.days.map((x) => DIAS[x].toLowerCase()).join(', ')} desde ${fmtDS(b.date)}${b.until ? ' hasta ' + fmtDS(b.until) : ''}` : fmtDL(b.date) }}</dd>
             <dt>Horario</dt><dd>{{ b.start === '00:00' && b.end === '23:59' ? 'Todo el día' : `${b.start} a ${b.end}` }}</dd>
             <template v-if="b.notes"><dt>Observaciones</dt><dd>{{ b.notes }}</dd></template>
-            <dt>Creado por</dt><dd>{{ b.created_by }}, {{ fmtStamp(b.created_at) }}</dd>
+            <dt>Registró</dt><dd><Traza :r="b" /></dd>
         </dl>
         </SeccionModal>
         <template #footer>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Appointment extends Model
 {
+    use Trazable;
+
     protected $fillable = [
         'token', 'patient_id', 'doctor_id', 'specialty_id', 'date', 'time', 'duration', 'type', 'reason', 'cost', 'deposit',
         'paid', 'refunded', 'payment_method', 'notes', 'channel', 'confirmed', 'status', 'clinical_form_id', 'form_version',

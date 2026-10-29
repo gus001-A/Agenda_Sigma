@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patient extends Model
 {
+    use Trazable;
+
     protected $fillable = ['sigma_id', 'legacy_id', 'name', 'curp', 'sex', 'birth_date', 'phone', 'email'];
 
     protected $casts = ['birth_date' => 'date:Y-m-d'];

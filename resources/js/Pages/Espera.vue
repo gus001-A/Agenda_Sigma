@@ -6,6 +6,8 @@ import Chip from '@/Components/Chip.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
 import Accion from '@/Components/Accion.vue';
+import Persona from '@/Components/Persona.vue';
+import Traza from '@/Components/Traza.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { fmtD } from '@/lib/util';
@@ -24,6 +26,7 @@ const columnas = computed(() => [
     { campo: 'preference', titulo: 'Preferencia', filtro: 'lista', opciones: ['Cualquier horario', 'Mañana', 'Tarde'] },
     { campo: 'priority', titulo: 'Prioridad', filtro: 'lista', opciones: ['Alta', 'Media', 'Baja'] },
     { campo: 'status', titulo: 'Estado', filtro: 'lista', opciones: ['En espera', 'Contactado', 'Agendado', 'Descartado'] },
+    { campo: 'created_by', titulo: 'Registró', filtro: 'texto', ancho: '150px' },
     { campo: 'acciones', titulo: 'Acciones', ordenar: false, ancho: '230px' },
 ]);
 const COL_PRIO = { Alta: '#d64545', Media: '#e08a1e', Baja: '#1f9e86' };
@@ -48,10 +51,11 @@ function agendar(x, t) {
             <Kpi etiqueta="Prioridad alta" :valor="lista.filter((w) => w.priority === 'Alta' && ['En espera', 'Contactado'].includes(w.status)).length" icono="pi pi-exclamation-triangle" color="#d64545" />
         </div>
         <TablaDatos :filas="filas" :columnas="columnas" vacio="No hay pacientes en la lista de espera">
-            <template #c-patient="{ fila }"><b style="font-weight: 600">{{ fila.patient }}</b><div v-if="fila.notes" class="muted small">{{ fila.notes }}</div></template>
+            <template #c-patient="{ fila }"><Persona :nombre="fila.patient" :detalle="fila.notes" /></template>
             <template #c-medico="{ fila }"><span :class="{ muted: !fila.doctor }">{{ fila.medico }}</span></template>
             <template #c-priority="{ fila }"><span class="chip" :style="{ '--sb': COL_PRIO[fila.priority] + '1a', '--sf': COL_PRIO[fila.priority] }">{{ fila.priority }}</span></template>
             <template #c-status="{ fila }"><Chip :valor="fila.status" tipo="espera" /></template>
+            <template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-acciones="{ fila }">
                 <div class="accs">
                     <template v-if="['En espera', 'Contactado'].includes(fila.status) && puede('cita')">

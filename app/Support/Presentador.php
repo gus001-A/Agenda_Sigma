@@ -36,7 +36,7 @@ class Presentador
             'deposit_state' => $a->depositState(),
             'balance' => $a->refunded ? 0 : $a->depositBalance(),
             'active' => $a->isActive(),
-        ];
+        ] + $a->traza();
     }
 
     /** Detalle completo para el panel lateral de la cita (incluye acciones permitidas). */

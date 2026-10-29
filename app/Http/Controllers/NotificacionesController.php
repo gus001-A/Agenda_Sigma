@@ -23,7 +23,7 @@ class NotificacionesController extends Controller
                 ->map(fn ($m) => ['id' => $m->id, 'appointment_id' => $m->appointment_id, 'patient' => $m->appointment?->patient?->name,
                     'active' => $m->appointment && ! in_array($m->appointment->status, ['Cancelada', 'Reagendada', 'Atendida'], true),
                     'channel' => $m->channel, 'kind' => Catalogo::ETIQUETAS_MENSAJE[$m->kind] ?? $m->kind, 'body' => $m->body,
-                    'status' => $m->status, 'error' => $m->error, 'at' => $m->sent_at->toIso8601String()]),
+                    'status' => $m->status, 'error' => $m->error, 'at' => $m->sent_at->toIso8601String()] + $m->traza()),
             'recordatorios' => ReminderRule::orderByDesc('hours')->get(),
             'canales' => Mensajeria::canales(),
         ]);

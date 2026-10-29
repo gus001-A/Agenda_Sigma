@@ -28,7 +28,7 @@ class FormatosController extends Controller
 
         return Inertia::render('Formatos', [
             'lista' => $formas->map(fn ($x) => ['id' => $x->id, 'name' => $x->name, 'specialty' => $x->specialty?->name, 'consult_type' => $x->consult_type,
-                'version' => $x->currentVersion?->version, 'draft' => (bool) $x->draft, 'active' => $x->active]),
+                'version' => $x->currentVersion?->version, 'draft' => (bool) $x->draft, 'active' => $x->active] + $x->traza()),
             'formato' => $f ? [
                 'id' => $f->id, 'name' => $f->name, 'specialty_id' => $f->specialty_id, 'consult_type' => $f->consult_type, 'active' => $f->active,
                 'version' => $f->currentVersion->version,

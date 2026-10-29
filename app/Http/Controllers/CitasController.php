@@ -53,13 +53,16 @@ class CitasController extends Controller
             'type' => ['required', Rule::in(Catalogo::TIPOS_CONSULTA)],
             'reason' => 'nullable|string|max:255',
             'cost' => 'required|numeric|min:0',
-            'deposit' => 'nullable|numeric|min:0',
-            'paid' => 'nullable|numeric|min:0',
+            'deposit' => 'nullable|numeric|min:0|lte:cost',
+            'paid' => 'nullable|numeric|min:0|lte:cost',
             'payment_method' => ['nullable', Rule::in(Catalogo::FORMAS_PAGO)],
             'channel' => ['required', Rule::in(Catalogo::CANALES)],
             'notes' => 'nullable|string|max:255',
             'waitlist_id' => 'nullable|exists:waitlist_entries,id',
-        ], [], ['patient_id' => 'paciente', 'doctor_id' => 'médico', 'date' => 'fecha', 'time' => 'horario']);
+        ], [
+            'deposit.lte' => 'El anticipo requerido no puede ser mayor al costo de la consulta.',
+            'paid.lte' => 'Lo recibido no puede ser mayor al costo de la consulta.',
+        ], ['patient_id' => 'paciente', 'doctor_id' => 'médico', 'date' => 'fecha', 'time' => 'horario']);
 
         $a = Citas::crear($v);
         if (! empty($v['waitlist_id'])) {

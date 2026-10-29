@@ -28,7 +28,7 @@ class EsperaController extends Controller
                 'specialty' => $w->specialty->name, 'doctor_id' => $w->doctor_id, 'doctor' => $w->doctor?->name,
                 'requested_at' => $w->requested_at->format('Y-m-d'), 'preference' => $w->preference, 'priority' => $w->priority,
                 'notes' => $w->notes, 'status' => $w->status, 'appointment_id' => $w->appointment_id,
-            ]);
+            ] + $w->traza());
 
         return Inertia::render('Espera', ['lista' => $lista]);
     }

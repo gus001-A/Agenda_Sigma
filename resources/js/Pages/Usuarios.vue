@@ -7,9 +7,10 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Segmento from '@/Components/Segmento.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
 import Accion from '@/Components/Accion.vue';
+import Persona from '@/Components/Persona.vue';
+import Traza from '@/Components/Traza.vue';
 import { usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
-import { initials } from '@/lib/util';
 
 const props = defineProps({ usuarios: Array, modulos: Array, permisos: Object, medicosSinUsuario: Array });
 const page = usePage();
@@ -28,6 +29,7 @@ const columnas = computed(() => [
     { campo: 'role', titulo: 'Rol', filtro: 'lista', opciones: roles.value, ancho: '170px' },
     { campo: 'email', titulo: 'Correo', filtro: 'texto' },
     { campo: 'estatus', titulo: 'Estatus', filtro: 'lista', opciones: ['Activo', 'Inactivo'], ancho: '150px' },
+    { campo: 'created_by', titulo: 'Registró', filtro: 'texto', ancho: '150px' },
     { campo: 'acc', titulo: '', ordenar: false, ancho: '70px' },
 ]);
 
@@ -48,11 +50,9 @@ async function permiso(rol, mod, v) { await api.post(route('api.permisos.update'
         </div>
 
         <TablaDatos v-if="vista === 'usuarios'" :filas="filas" :columnas="columnas">
+<template #c-created_by="{ fila }"><Traza :r="fila" /></template>
             <template #c-name="{ fila }">
-                <span class="row" style="gap: 10px; flex-wrap: nowrap">
-                    <span class="avatar" style="width: 30px; height: 30px; font-size: 11px">{{ initials(fila.name) }}</span>
-                    <span><b style="font-weight: 600">{{ fila.name }}</b><div v-if="fila.agenda" class="muted small">Agenda: {{ fila.agenda }}</div></span>
-                </span>
+                <Persona :nombre="fila.name" :detalle="fila.agenda ? 'Agenda: ' + fila.agenda : fila.role" />
             </template>
             <template #c-role="{ fila }"><span class="chip plain" :style="{ '--sb': COLOR_ROL[fila.role] + '1a', '--sf': COLOR_ROL[fila.role] }"><i :class="ICONO_ROL[fila.role]" />{{ fila.role }}</span></template>
             <template #c-email="{ fila }"><span class="small">{{ fila.email }}</span></template>

@@ -3,6 +3,8 @@ import { ref, computed, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chip from '@/Components/Chip.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
+import Persona from '@/Components/Persona.vue';
+import Traza from '@/Components/Traza.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { api, avisar, refrescar } from '@/lib/api';
 import { fmtStamp } from '@/lib/util';
@@ -40,14 +42,15 @@ const abrirPortal = async (id) => { const c = await api.get(route('api.citas.sho
         <div class="split">
             <TablaDatos :filas="filas" :columnas="columnas" clicable :clase-fila="(m) => (sel && m.id === sel.id ? 'p-highlight' : '')" vacio="Aún no se envían mensajes" @fila="(m) => (selId = m.id)">
                 <template #c-channel="{ fila }"><span class="chip plain" :style="{ '--sb': COLOR_CANAL[fila.channel] + '1a', '--sf': COLOR_CANAL[fila.channel] }"><i :class="ICON_CANAL[fila.channel]" style="font-size: 11px" />{{ fila.channel }}</span></template>
-                <template #c-patient="{ fila }"><b style="font-weight: 600">{{ fila.patient }}</b></template>
+                <template #c-patient="{ fila }"><Persona :nombre="fila.patient" /></template>
                 <template #c-status="{ fila }"><Chip :valor="fila.status" tipo="msg" /></template>
             </TablaDatos>
             <div class="stack scroll-y">
                 <div v-if="sel" class="card">
-                    <header><span class="hic" :style="{ '--c': COLOR_CANAL[sel.channel] }"><i :class="ICON_CANAL[sel.channel]" /></span><h3>Vista previa</h3><span class="tag">{{ sel.kind }}</span></header>
+                    <header><span class="hic" :style="{ '--c': COLOR_CANAL[sel.channel] }"><i :class="ICON_CANAL[sel.channel]" /></span><h3>Mensaje</h3><span class="tag">{{ sel.kind }}</span></header>
                     <div class="body stack" :style="{ background: sel.channel === 'WhatsApp' ? '#efeae2' : 'var(--surface-2)', borderRadius: '0 0 14px 14px' }">
                         <div class="bubble" :class="{ sms: sel.channel === 'SMS', mail: sel.channel === 'Correo electrónico' }">{{ sel.body }}</div>
+                        <Traza :r="sel" etiqueta="Envió:" />
                         <p v-if="sel.error" class="note err small">{{ sel.error }}</p>
                         <div v-if="sel.active" class="row">
                             <Button v-if="puede('cita')" label="WhatsApp / SMS" icon="pi pi-whatsapp" size="small" severity="success" @click="ui.abrir('mensaje', { cita: { id: sel.appointment_id, patient: sel.patient } })" />

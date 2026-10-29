@@ -13,6 +13,7 @@ import Aura from '@primevue/themes/aura';
 import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
+import digitos from './lib/digitos';
 
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
@@ -78,8 +79,19 @@ createInertiaApp({
             .use(PrimeVue, { theme: { preset: Sigma24, options: { darkModeSelector: false, cssLayer: false } }, locale: localeEs })
             .use(ToastService)
             .use(ConfirmationService)
-            .directive('tooltip', Tooltip);
-        const comps = { Button, Dialog, Drawer, Select, InputText, InputNumber, Textarea, Checkbox, ToggleSwitch, SelectButton, DatePicker,
+            .directive('tooltip', Tooltip)
+            .directive('digitos', digitos);
+        // Todas las listas desplegables permiten escribir para buscar: el buscador se enfoca al abrir la lista.
+        const SelectBuscable = {
+            extends: Select,
+            props: {
+                filter: { type: Boolean, default: true },
+                autoFilterFocus: { type: Boolean, default: true },
+                resetFilterOnHide: { type: Boolean, default: true },
+                filterPlaceholder: { type: String, default: 'Escribe para buscar…' },
+            },
+        };
+        const comps = { Button, Dialog, Drawer, Select: SelectBuscable, InputText, InputNumber, Textarea, Checkbox, ToggleSwitch, SelectButton, DatePicker,
             DataTable, Column, Tag, RadioButton, Password, Paginator, Tabs, TabList, Tab, Message, IconField, InputIcon };
         Object.entries(comps).forEach(([n, c]) => app.component(n, c));
         return app.mount(el);

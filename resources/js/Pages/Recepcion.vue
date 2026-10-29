@@ -7,8 +7,10 @@ import DateNav from '@/Components/DateNav.vue';
 import Kpi from '@/Components/Kpi.vue';
 import TablaDatos from '@/Components/TablaDatos.vue';
 import Accion from '@/Components/Accion.vue';
+import Persona from '@/Components/Persona.vue';
 import { ui, usePermisos } from '@/lib/ui';
 import { filtrar } from '@/lib/api';
+import { CLASE_ESTADO } from '@/lib/util';
 
 const props = defineProps({ fecha: String, filtros: Object, filas: Array, inactivas: Array });
 const { puede } = usePermisos();
@@ -36,14 +38,15 @@ const colInactivas = computed(() => [
     { campo: 'status', titulo: 'Estado', filtro: 'lista', opciones: ['Cancelada', 'Reagendada'] },
     { campo: 'last', titulo: 'Último movimiento', filtro: 'texto' },
 ]);
-const claseFila = (r) => (r.state === 'Disponible' ? 'fila-libre' : r.state === 'Bloqueada' ? 'fila-bloq' : r.state === 'Anticipo pendiente' ? 'fila-alerta' : '');
+// Cada fila lleva el color de su estado en el borde; los espacios no disponibles se atenúan.
+const claseFila = (r) => (r.state === 'No disponible' ? 'fila-nodisp' : `fila-estado ${CLASE_ESTADO[r.state] || ''}`);
 const conteo = (estados) => props.filas.filter((r) => estados.includes(r.state)).length;
 </script>
 
 <template>
     <AppLayout titulo="Recepción del día" subtitulo="Pantalla operativa de citas">
         <div class="vh">
-            <DateNav :fecha="fecha" @cambiar="ir({ fecha: $event })" />
+            <DateNav :fecha="fecha" etiqueta=" " @cambiar="ir({ fecha: $event })" />
             <div class="sp" />
             <label class="chk"><Checkbox :model-value="filtros.ocultar" binary @update:model-value="ir({ ocultar: $event ? 1 : null })" />Ocultar espacios libres</label>
             <Segmento v-model="vista" :opciones="[{ l: 'Agenda del día', v: 'agenda', i: 'pi pi-calendar', n: filas.length }, { l: 'Canceladas y reagendadas', v: 'inactivas', i: 'pi pi-times-circle', n: inactivas.length }]" />
@@ -61,8 +64,8 @@ const conteo = (estados) => props.filas.filter((r) => estados.includes(r.state))
             @fila="(r) => r.appt && ui.abrirCita(r.appt.id)">
             <template #c-time="{ fila }"><b>{{ fila.time }}</b></template>
             <template #c-paciente="{ fila }">
-                <span v-if="fila.appt" style="font-weight: 600">{{ fila.paciente }}</span><span v-else class="muted">—</span>
-                <span v-if="fila.off" class="small" style="color: var(--danger)"> fuera de horario</span>
+                <Persona v-if="fila.appt" :nombre="fila.paciente"><span v-if="fila.off" style="color: var(--danger); font-weight: 600">Fuera de horario</span><template v-else>{{ fila.appt.type }}</template></Persona>
+                <span v-else class="muted">—</span>
             </template>
             <template #c-state="{ fila }"><Chip :valor="fila.state" /> <span v-if="fila.block" class="muted small">{{ fila.block.type }}</span></template>
             <template #c-hc="{ fila }"><Chip v-if="fila.appt" :valor="fila.hc" tipo="hc" /><span v-else class="muted">—</span></template>

@@ -52,6 +52,7 @@ class ImportarPacientesSigma extends Command
                     'phone' => $this->telefono($p->tCelular_p) ?? $this->telefono($p->tParticular_p) ?? $this->telefono($p->tTrabajo_p),
                     'email' => $this->correo($p->email_p),
                     'created_at' => $this->fechaHora($p->fechaR_p) ?? $ahora,
+                    'created_by' => 'Importación SIGMA',
                     'updated_at' => $ahora,
                 ])->all();
 

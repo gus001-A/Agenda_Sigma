@@ -102,7 +102,6 @@ Route::middleware(['auth', 'activo'])->group(function () {
         Route::delete('bloqueos/{bloqueo}', [EspaciosController::class, 'eliminarBloqueo'])->middleware('accion:bloqueo')->name('bloqueos.destroy');
 
         // Reservaciones de espacios
-        Route::post('reservaciones/validar', [EspaciosController::class, 'validarReserva'])->name('reservaciones.validar');
         Route::get('reservaciones/{reservacion}', [EspaciosController::class, 'verReserva'])->name('reservaciones.show');
         Route::post('reservaciones', [EspaciosController::class, 'guardarReserva'])->middleware('accion:espacio')->name('reservaciones.store');
         Route::put('reservaciones/{reservacion}', [EspaciosController::class, 'guardarReserva'])->middleware('accion:espacio')->name('reservaciones.update');
@@ -132,7 +131,6 @@ Route::middleware(['auth', 'activo'])->group(function () {
             Route::put('usuarios/{usuario}', [UsuariosController::class, 'update'])->name('usuarios.update');
             Route::post('permisos', [UsuariosController::class, 'permiso'])->name('permisos.update');
         });
-        Route::post('medicos/vista-previa', [CatalogosController::class, 'vistaPreviaMedico'])->name('medicos.preview');
         Route::post('espacios', [CatalogosController::class, 'guardarEspacio'])->middleware('accion:operativo')->name('espacios.store');
         Route::put('espacios/{espacio}', [CatalogosController::class, 'guardarEspacio'])->middleware('accion:operativo')->name('espacios.update');
     });

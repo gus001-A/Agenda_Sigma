@@ -23,7 +23,7 @@ class UsuariosController extends Controller
         $perm = RoleModule::all()->groupBy('role')->map(fn ($g) => $g->pluck('module')->values());
 
         return Inertia::render('Usuarios', [
-            'usuarios' => User::with('doctor:id,name')->orderBy('role')->orderBy('name')->get(['id', 'name', 'email', 'role', 'doctor_id', 'active']),
+            'usuarios' => User::with('doctor:id,name')->orderBy('role')->orderBy('name')->get(['id', 'name', 'email', 'role', 'doctor_id', 'active', 'created_by', 'created_at', 'updated_by', 'updated_at']),
             'modulos' => Catalogo::MODULOS,
             'permisos' => collect(Catalogo::ROLES)->mapWithKeys(fn ($r) => [$r => $perm[$r] ?? []]),
             'medicosSinUsuario' => Doctor::whereNotIn('id', User::whereNotNull('doctor_id')->pluck('doctor_id'))->get(['id', 'name']),

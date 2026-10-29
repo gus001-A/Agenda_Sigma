@@ -16,7 +16,7 @@ defineProps({
 </script>
 
 <template>
-    <Dialog v-bind="$attrs" modal :dismissable-mask="true" :draggable="false" :style="{ width: ancho }" :breakpoints="{ '760px': '96vw' }"
+    <Dialog v-bind="$attrs" modal :dismissable-mask="true" :draggable="false" :style="{ width: ancho, maxWidth: '96vw' }" :breakpoints="{ '760px': '96vw' }"
         class="modal-pro" :pt="{ root: { style: { '--mc': color } } }">
         <template #header>
             <div class="mp-head">

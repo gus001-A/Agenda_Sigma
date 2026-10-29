@@ -26,6 +26,9 @@ class Agenda
 
     private ?Collection $bloqueos = null;
 
+    /** @var array<int, array{b:Block, scope:string, target:?int, inicio:string, hasta:?string, recurrente:bool, dias:int[]}>|null bloqueos ya interpretados */
+    private ?array $indiceBloqueos = null;
+
     private string $hoy;
 
     private int $ahora;
@@ -116,6 +119,7 @@ class Agenda
         $this->citas = [];
         $this->cargadas = [];
         $this->bloqueos = null;
+        $this->indiceBloqueos = null;
     }
 
     public function citasDe(int $doctorId, string $fecha): array
@@ -133,9 +137,26 @@ class Agenda
     /** Bloqueos que aplican a un médico (o recurso) en una fecha. */
     public function bloqueosEn(string $scope, ?int $targetId, string $fecha): array
     {
-        return $this->bloqueos()->filter(fn (Block $b) => $b->scope === $scope
-            && ($b->target_id === null || $b->target_id === $targetId)
-            && $b->appliesOn($fecha))->values()->all();
+        // Las fechas y días de cada bloqueo se leen una sola vez: convertirlas en cada consulta era lo más caro de la agenda.
+        $this->indiceBloqueos ??= $this->bloqueos()->map(fn (Block $b) => [
+            'b' => $b, 'scope' => $b->scope, 'target' => $b->target_id, 'inicio' => $b->date->format('Y-m-d'),
+            'hasta' => $b->until?->format('Y-m-d'), 'recurrente' => (bool) $b->recurring, 'dias' => array_map('intval', $b->days ?? []),
+        ])->all();
+        $dia = self::diaSemana($fecha);
+        $out = [];
+        foreach ($this->indiceBloqueos as $x) {
+            if ($x['scope'] !== $scope || ($x['target'] !== null && $x['target'] !== $targetId)) {
+                continue;
+            }
+            $aplica = $x['recurrente']
+                ? $fecha >= $x['inicio'] && (! $x['hasta'] || $fecha <= $x['hasta']) && in_array($dia, $x['dias'], true)
+                : $x['inicio'] === $fecha;
+            if ($aplica) {
+                $out[] = $x['b'];
+            }
+        }
+
+        return $out;
     }
 
     // ---------------- generación de espacios ----------------
@@ -152,28 +173,31 @@ class Agenda
         $bloqueos = $this->bloqueosEn('doctor', $d->id, $fecha);
         $usadas = [];
         if ($d->worksOn($fecha)) {
+            // Valores del médico, citas y bloqueos se leen una vez fuera del ciclo de espacios.
+            $dur = (int) $d->duration;
             $fin = self::min($d->end_time);
-            for ($m = self::min($d->start_time); $m + $d->duration <= $fin; $m += $d->duration) {
+            $porHora = [];
+            foreach ($citas as $c) {
+                $porHora[$c->time] ??= $c;
+            }
+            $tramos = array_map(fn ($b) => [$b, self::min($b->start_time), self::min($b->end_time)], $bloqueos);
+            for ($m = self::min($d->start_time); $m + $dur <= $fin; $m += $dur) {
                 $t = self::hhmm($m);
-                $cita = null;
-                foreach ($citas as $c) {
-                    if ($c->time === $t) {
-                        $cita = $c;
-                        $usadas[$c->id] = true;
-                        break;
-                    }
+                $cita = $porHora[$t] ?? null;
+                if ($cita) {
+                    $usadas[$cita->id] = true;
                 }
                 $bloqueo = null;
                 if (! $cita) {
-                    foreach ($bloqueos as $b) {
-                        if (self::traslapa($m, $m + $d->duration, self::min($b->start_time), self::min($b->end_time))) {
+                    foreach ($tramos as [$b, $b1, $b2]) {
+                        if ($m < $b2 && $b1 < $m + $dur) {
                             $bloqueo = $b;
                             break;
                         }
                     }
                 }
                 $estado = $cita ? $cita->status : ($bloqueo ? 'Bloqueada' : ($this->esPasado($fecha, $m) ? 'No disponible' : 'Disponible'));
-                $out[] = ['time' => $t, 'm' => $m, 'dur' => $d->duration, 'state' => $estado, 'appt' => $cita, 'block' => $bloqueo, 'off' => false];
+                $out[] = ['time' => $t, 'm' => $m, 'dur' => $dur, 'state' => $estado, 'appt' => $cita, 'block' => $bloqueo, 'off' => false];
             }
         }
         // Citas que quedaron fuera del horario vigente (p. ej. tras cambiar la configuración del médico).

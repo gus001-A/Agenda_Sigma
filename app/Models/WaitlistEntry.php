@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WaitlistEntry extends Model
 {
+    use Trazable;
+
     protected $fillable = ['patient_id', 'specialty_id', 'doctor_id', 'requested_at', 'preference', 'priority', 'notes', 'status', 'appointment_id'];
 
     protected $casts = ['requested_at' => 'date:Y-m-d'];

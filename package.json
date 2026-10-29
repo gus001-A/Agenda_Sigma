@@ -23,6 +23,8 @@
     "dependencies": {
         "@primevue/themes": "^4.5.4",
         "chart.js": "^4.5.1",
+        "jspdf": "^2.5.2",
+        "jspdf-autotable": "^3.8.4",
         "primeicons": "^8.0.2",
         "primevue": "^4.5.5"
     }

@@ -11,7 +11,7 @@ const columnas = computed(() => [
     { campo: 'fecha', titulo: 'Fecha y hora', filtro: 'texto', ancho: '150px' },
     { campo: 'user', titulo: 'Usuario', filtro: 'texto', ancho: '190px' },
     { campo: 'action', titulo: 'Acción', filtro: 'lista', opciones: props.acciones, ancho: '220px' },
-    { campo: 'detail', titulo: 'Detalle', filtro: 'texto' },
+    { campo: 'detail', titulo: 'Detalle', filtro: 'texto', envolver: true },
     { campo: 'ip', titulo: 'IP', filtro: 'texto', ancho: '120px' },
 ]);
 const ICONOS = [['Cita', 'pi pi-calendar', '#2b5480'], ['Anticipo', 'pi pi-wallet', '#e08a1e'], ['Reembolso', 'pi pi-replay', '#8e3b69'], ['Historia', 'pi pi-file-edit', '#0891b2'],

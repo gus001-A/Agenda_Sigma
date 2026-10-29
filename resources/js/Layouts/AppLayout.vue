@@ -8,7 +8,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { avisos, avisar } from '@/lib/api';
 import { ui, usePermisos } from '@/lib/ui';
 import { initials } from '@/lib/util';
-import CitaDrawer from '@/Components/Dialogos/CitaDrawer.vue';
+import CitaDetalle from '@/Components/Dialogos/CitaDetalle.vue';
 import NuevaCita from '@/Components/Dialogos/NuevaCita.vue';
 import Pago from '@/Components/Dialogos/Pago.vue';
 import Cancelar from '@/Components/Dialogos/Cancelar.vue';
@@ -23,7 +23,7 @@ import Liberado from '@/Components/Dialogos/Liberado.vue';
 import NuevaEspera from '@/Components/Dialogos/NuevaEspera.vue';
 import EnviarMensaje from '@/Components/Dialogos/EnviarMensaje.vue';
 
-defineProps({ titulo: String, subtitulo: String });
+defineProps({ titulo: String, subtitulo: String, sinNuevaCita: Boolean });
 const page = usePage();
 const toast = useToast();
 const confirm = useConfirm();
@@ -37,7 +37,7 @@ const modulo = computed(() => (page.props.menu || []).find((m) => m.ruta === act
 const GRUPOS = [
     { k: 'g-operacion', l: 'Operación', mods: ['panel', 'agenda', 'recepcion', 'disponibilidad', 'espera', 'espacios', 'anticipos', 'notificaciones'] },
     { k: 'g-clinico', l: 'Clínico', mods: ['historias', 'preconsulta'] },
-    { k: 'g-admin', l: 'Administración', mods: ['formatos', 'catalogos', 'reportes', 'usuarios', 'auditoria'] },
+    { k: 'g-admin', l: 'Administración', mods: ['formatos', 'catalogos', 'reportes', 'usuarios'] },
 ];
 const grupos = computed(() => {
     const permitidos = Object.fromEntries((page.props.menu || []).map((m) => [m.k, m]));
@@ -111,7 +111,6 @@ onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEv
             <div class="side-user">
                 <div v-if="abierto === 'user'" class="menu-pop">
                     <div class="info">{{ user.email }}</div>
-                    <Link v-if="user.modulos.includes('auditoria')" :href="route('auditoria')"><i class="pi pi-shield" />Auditoría</Link>
                     <button type="button" class="salir" @click="salir"><i class="pi pi-sign-out" />Cerrar sesión</button>
                 </div>
                 <button v-tooltip.right="tip(user.name)" type="button" :aria-expanded="abierto === 'user'" @click="alternar('user')">
@@ -136,7 +135,7 @@ onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEv
                     </div>
                     <div class="page-acts">
                         <slot name="acciones" />
-                        <Button v-if="puede('cita')" label="Nueva cita" icon="pi pi-calendar-plus" class="btn-cta" @click="ui.abrir('nuevaCita', {})" />
+                        <Button v-if="puede('cita') && !sinNuevaCita" label="Nueva cita" icon="pi pi-calendar-plus" class="btn-cta" @click="ui.abrir('nuevaCita', {})" />
                     </div>
                 </div>
                 <section class="view"><slot /></section>
@@ -144,7 +143,7 @@ onBeforeUnmount(() => { clearInterval(reloj); quitarEscucha(); document.removeEv
         </div>
     </div>
 
-    <CitaDrawer />
+    <CitaDetalle />
     <NuevaCita /><Pago /><Cancelar /><Reagendar /><EditarCita /><Finalizar /><Reembolso />
     <Bloqueo /><BloqueoVer /><Historia /><Liberado /><NuevaEspera /><EnviarMensaje />
     <ConfirmDialog />

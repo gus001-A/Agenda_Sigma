@@ -1,12 +1,14 @@
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 
 /**
  * Tabla estándar del sistema: filtro de búsqueda al pie de cada columna (debajo de los registros),
- * paginación de 12 registros y desplazamiento interno (la página no se mueve, solo los registros).
+ * paginación con los registros que quepan en pantalla (sin hueco entre la última fila y la paginación) y desplazamiento interno
+ * (la página no se mueve, solo los registros).
  *
- * columnas: [{ campo, titulo, filtro?: 'texto' | 'lista', opciones?: [], ancho?, alinear?: 'right', ordenar?: bool }]
+ * columnas: [{ campo, titulo, filtro?: 'texto' | 'lista', opciones?: [], ancho?, alinear?: 'right', ordenar?: bool, envolver?: bool }]
+ * Las celdas van en una sola línea (con "…"); envolver: true deja que el texto ocupe varias líneas.
  * Celdas personalizadas con el slot "c-<campo>" ({ fila }).
  * Modo servidor (lazy): emite "cambio" con { pagina, filas, filtros } y recibe "total".
  */
@@ -18,6 +20,8 @@ const props = defineProps({
     total: Number,
     primero: { type: Number, default: 0 },
     porPagina: { type: Number, default: 12 },
+    // Registros por página fijos (no se ajustan al alto de la pantalla).
+    filasFijas: Number,
     filtrosIniciales: { type: Object, default: () => ({}) },
     clicable: Boolean,
     claseFila: Function,
@@ -26,14 +30,21 @@ const props = defineProps({
 });
 const emit = defineEmits(['fila', 'cambio']);
 
+const hayFiltrables = computed(() => props.columnas.some((c) => c.filtro));
+// El ancho de cada columna es una proporción (las que no lo indican pesan 110 px), así la tabla
+// siempre ocupa el 100 % del espacio sin desplazamiento horizontal ni columnas aplastadas.
+const anchos = computed(() => {
+    const pesos = props.columnas.map((c) => parseFloat(c.ancho) || 110);
+    const total = pesos.reduce((a, b) => a + b, 0);
+    return Object.fromEntries(props.columnas.map((c, i) => [c.campo, ((pesos[i] * 100) / total).toFixed(2) + '%']));
+});
 const crearFiltros = () => Object.fromEntries(props.columnas.filter((c) => c.filtro).map((c) => [c.campo, {
     value: props.filtrosIniciales[c.campo] ?? null,
     matchMode: c.filtro === 'lista' ? FilterMatchMode.EQUALS : FilterMatchMode.CONTAINS,
 }]));
 const filtros = ref(crearFiltros());
-const porPag = ref(props.porPagina);
-const hayFiltros = computed(() => Object.values(filtros.value).some((f) => f.value !== null && f.value !== ''));
-const hayFiltrables = computed(() => props.columnas.some((c) => c.filtro));
+const porPag = ref(props.filasFijas || props.porPagina);
+const activos = computed(() => Object.values(filtros.value).filter((f) => f.value !== null && f.value !== '').length);
 // Si cambian las columnas (p. ej. otra pestaña), se reconstruyen los filtros.
 watch(() => props.columnas.map((c) => c.campo).join('|'), () => { filtros.value = crearFiltros(); });
 
@@ -41,10 +52,10 @@ const valor = (fila, campo) => campo.split('.').reduce((o, k) => (o == null ? o 
 const filtrosPlanos = () => Object.fromEntries(Object.entries(filtros.value).filter(([, f]) => f.value !== null && f.value !== '').map(([k, f]) => [k, f.value]));
 
 let t = null;
-function avisarCambio(pagina = 0) {
+function avisarCambio(pagina = 0, espera = 350) {
     if (!props.lazy) return;
     clearTimeout(t);
-    t = setTimeout(() => emit('cambio', { pagina: pagina + 1, filas: porPag.value, filtros: filtrosPlanos() }), 350);
+    t = setTimeout(() => emit('cambio', { pagina: pagina + 1, filas: porPag.value, filtros: filtrosPlanos() }), espera);
 }
 // Se reemplaza el objeto completo para que la tabla vuelva a filtrar.
 function setFiltro(campo, v) {
@@ -56,6 +67,37 @@ function limpiar() {
     avisarCambio(0);
 }
 defineExpose({ limpiar });
+
+// Registros por página: los que quepan en el alto disponible, y el sobrante (menos de una fila) se reparte
+// entre las filas para que no quede hueco entre la última fila y la paginación.
+const raiz = ref(null);
+let observador = null;
+function ajustarFilas() {
+    if (props.filasFijas) return;
+    const cont = raiz.value?.querySelector('.p-datatable-table-container');
+    const filas = cont ? [...cont.querySelectorAll('.p-datatable-tbody > tr:not(.p-datatable-empty-message)')] : [];
+    if (!cont || !filas.length) return;
+    raiz.value.style.removeProperty('--fila-h'); // se mide la altura natural, sin el estiramiento anterior
+    const fijo = (cont.querySelector('.p-datatable-thead')?.offsetHeight || 0) + (cont.querySelector('.p-datatable-tfoot')?.offsetHeight || 0);
+    const disponible = cont.clientHeight - fijo;
+    const alto = Math.max(...filas.map((f) => f.offsetHeight));
+    const n = Math.min(40, Math.max(5, Math.floor(disponible / alto)));
+    // Solo se estira cuando la página está llena; la última página puede traer menos registros.
+    if (filas.length >= n) raiz.value.style.setProperty('--fila-h', Math.floor(disponible / n) + 'px');
+    if (n !== porPag.value) {
+        porPag.value = n;
+        avisarCambio(0, 0);
+        nextTick(ajustarFilas);
+    }
+}
+// Al cambiar de página o de datos, se vuelve a medir.
+watch(() => props.filas, () => nextTick(ajustarFilas));
+onMounted(() => {
+    nextTick(ajustarFilas);
+    observador = new ResizeObserver(() => { clearTimeout(observador.t); observador.t = setTimeout(ajustarFilas, 120); });
+    if (raiz.value) observador.observe(raiz.value);
+});
+onBeforeUnmount(() => observador?.disconnect());
 
 // Páginas visibles: primera, última y dos alrededor de la actual (-1 = puntos suspensivos).
 function ventana(p, total) {
@@ -69,7 +111,7 @@ function ventana(p, total) {
 </script>
 
 <template>
-    <div class="tabla-datos">
+    <div ref="raiz" class="tabla-datos">
         <DataTable
             :filters="filtros"
             v-model:rows="porPag"
@@ -88,33 +130,38 @@ function ventana(p, total) {
             :row-class="(f) => [clicable ? 'fila-clic' : '', claseFila ? claseFila(f) : ''].join(' ')"
             class="td"
             @row-click="(e) => clicable && emit('fila', e.data)"
-            @page="(e) => avisarCambio(e.page)"
+            @page="(e) => { avisarCambio(e.page); nextTick(ajustarFilas); }"
         >
             <Column v-for="c in columnas" :key="c.campo" :field="c.campo" :header="c.titulo" :sortable="!lazy && c.ordenar !== false"
-                :style="c.ancho ? { minWidth: c.ancho, width: c.ancho } : {}" :header-class="c.alinear === 'right' ? 'td-der' : ''"
-                :body-class="c.alinear === 'right' ? 'td-der' : ''" footer-class="td-pie">
+                :style="{ width: anchos[c.campo] }" :header-class="c.alinear === 'right' ? 'td-der' : ''"
+                :body-class="[c.alinear === 'right' ? 'td-der' : '', c.envolver ? 'td-envolver' : ''].join(' ')" footer-class="td-pie">
                 <template #body="{ data }">
-                    <slot :name="'c-' + c.campo" :fila="data">{{ valor(data, c.campo) ?? '—' }}</slot>
+                    <slot :name="'c-' + c.campo" :fila="data"><span :title="c.envolver ? null : valor(data, c.campo)">{{ valor(data, c.campo) ?? '—' }}</span></slot>
                 </template>
                 <!-- Filtro al pie de la columna, debajo de los registros -->
                 <template v-if="hayFiltrables" #footer>
-                    <Select v-if="c.filtro === 'lista'" :model-value="filtros[c.campo]?.value" :options="c.opciones" placeholder="Todos" show-clear size="small"
-                        class="td-filtro" :class="{ activo: filtros[c.campo]?.value }" append-to="body" @update:model-value="setFiltro(c.campo, $event)" />
+                    <Select v-if="c.filtro === 'lista'" :model-value="filtros[c.campo]?.value" :options="c.opciones" :placeholder="c.titulo" show-clear size="small"
+                        class="td-filtro" :class="{ activo: filtros[c.campo]?.value }" append-to="body"
+                        :aria-label="'Filtrar ' + c.titulo" @update:model-value="setFiltro(c.campo, $event)" />
                     <IconField v-else-if="c.filtro" class="td-filtro" :class="{ activo: filtros[c.campo]?.value }">
                         <InputIcon class="pi pi-search" />
-                        <InputText :model-value="filtros[c.campo]?.value" placeholder="Buscar" size="small" @update:model-value="setFiltro(c.campo, $event)" />
+                        <InputText :model-value="filtros[c.campo]?.value" :placeholder="c.titulo" size="small" :aria-label="'Buscar ' + c.titulo" @update:model-value="setFiltro(c.campo, $event)" />
                     </IconField>
+                    <span v-else-if="c === columnas[columnas.length - 1] && activos" class="td-limpiar" title="Quitar filtros" @click="limpiar"><i class="pi pi-filter-slash" /></span>
                 </template>
             </Column>
             <template #empty>
-                <div class="empty"><i class="pi pi-inbox" style="font-size: 26px; color: #b6c3d1" /><b style="margin-top: 6px">{{ vacio }}</b></div>
+                <div class="empty"><i class="pi pi-inbox" style="font-size: 26px; color: #b6c3d1" /><b style="margin-top: 6px">{{ vacio }}</b>
+                    <Button v-if="activos" label="Quitar filtros" icon="pi pi-filter-slash" size="small" text style="margin-top: 6px" @click="limpiar" />
+                </div>
             </template>
             <template #paginatorcontainer="{ first, last, page, pageCount, totalRecords, firstPageCallback, prevPageCallback, nextPageCallback, lastPageCallback, changePageCallback }">
                 <div class="pag">
                     <div class="pag-info">
                         <span class="pag-ic"><i class="pi pi-list" /></span>
                         <span>Mostrando <b>{{ totalRecords ? first : 0 }}–{{ last }}</b> de <b>{{ totalRecords }}</b> registros</span>
-                        <Button v-if="hayFiltros" label="Limpiar filtros" icon="pi pi-filter-slash" size="small" severity="danger" text @click="limpiar" />
+                        <span v-if="activos" class="pag-filtro"><i class="pi pi-filter" /> {{ activos }} {{ activos === 1 ? 'filtro' : 'filtros' }}</span>
+                        <Button v-if="activos" label="Limpiar filtros" icon="pi pi-filter-slash" size="small" severity="danger" text @click="limpiar" />
                     </div>
                     <div v-if="pageCount > 1" class="pag-nav">
                         <button type="button" class="pag-b" :disabled="page === 0" aria-label="Primera página" @click="firstPageCallback"><i class="pi pi-angle-double-left" /></button>

@@ -341,6 +341,8 @@ class DatabaseSeeder extends Seeder
 
         AuditLog::create(['user_name' => 'Carmen Ortiz', 'action' => 'Formato publicado', 'detail' => 'Historia clínica de Traumatología v1.1', 'created_at' => Agenda::sumarDias($hoy, -1).' 09:02:00']);
         AuditLog::create(['user_name' => 'Mónica Fuentes', 'action' => 'Bloqueo creado', 'detail' => 'Dr. Juan Pérez Aguilar: Reunión 11:00 a 12:00', 'created_at' => Agenda::sumarDias($hoy, -1).' 10:30:00']);
+
+        $this->call(AdministradorSeeder::class);
     }
 
     /** Respuestas simuladas para un formato (port de genAnswers del prototipo). */

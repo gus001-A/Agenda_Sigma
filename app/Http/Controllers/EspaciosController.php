@@ -68,13 +68,6 @@ class EspaciosController extends Controller
         ], [], ['procedure' => 'procedimiento o actividad', 'duration' => 'duración']);
     }
 
-    public function validarReserva(Request $request): JsonResponse
-    {
-        $r = $request->validate(['resource_id' => 'required', 'date' => 'required|date_format:Y-m-d', 'start_time' => 'required', 'duration' => 'required|integer|min:0', 'doctor_id' => 'nullable', 'id' => 'nullable|integer']);
-
-        return response()->json(Espacios::validar($r, $r['id'] ?? null));
-    }
-
     public function verReserva(Reservation $reservacion): JsonResponse
     {
         $reservacion->load('resource', 'doctor:id,name', 'patient:id,name');

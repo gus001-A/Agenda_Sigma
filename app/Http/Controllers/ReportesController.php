@@ -3,12 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Models\Doctor;
-use App\Models\Reservation;
-use App\Models\Resource;
-use App\Services\Agenda;
 use App\Support\Catalogo;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,7 +24,10 @@ class ReportesController extends Controller
     {
         [$desde, $hasta] = $this->rango($request);
         $hoy = now()->format('Y-m-d');
-        $L = Appointment::with('doctor:id,name,resource_id,duration', 'specialty:id,name', 'patient:id,name')->whereBetween('date', [$desde, $hasta])->get();
+        // Solo las columnas que usa el reporte, con médico y especialidad por nombre.
+        $L = Appointment::with('doctor:id,name', 'specialty:id,name')
+            ->select(['id', 'date', 'time', 'patient_id', 'doctor_id', 'specialty_id', 'type', 'status', 'hc_status', 'deposit', 'paid', 'refunded'])
+            ->whereBetween('date', [$desde, $hasta])->get();
         $act = $L->where('status', '!=', 'Reagendada');
 
         $agrupar = fn (string $campo, callable $nombre) => $act->groupBy($campo)->map(fn ($g, $k) => [
@@ -40,43 +38,7 @@ class ReportesController extends Controller
         $porEstado = $L->countBy('status')->sortDesc();
         $noAtendidas = $L->filter(fn ($a) => $a->dateString() < $hoy && in_array($a->status, ['Agendada', 'Confirmada', 'Anticipo pendiente'], true))->count();
 
-        // Ocupación de recursos (reservaciones + consultas en consultorios)
-        $dias = Carbon::parse($desde)->diffInDays(Carbon::parse($hasta)) + 1;
-        $reservas = Reservation::where('status', 'Programada')->whereBetween('date', [$desde, $hasta])->get();
-        $ocupacion = Resource::whereIn('type', ['Consultorio', 'Quirófano', 'Sala de procedimientos'])->orderBy('id')->get()->map(function ($r) use ($dias, $reservas, $act) {
-            $disp = (Agenda::min($r->closes_at) - Agenda::min($r->opens_at)) * $dias;
-            $usado = $reservas->where('resource_id', $r->id)->sum('duration');
-            if ($r->type === 'Consultorio') {
-                $usado += $act->where('status', '!=', 'Cancelada')->filter(fn ($a) => $a->doctor->resource_id === $r->id)->sum('duration');
-            }
-
-            return ['l' => $r->name, 'v' => $disp ? min(100, (int) round($usado * 100 / $disp)) : 0];
-        });
-
-        // Horas de agenda médica: ocupadas, libres y bloqueadas
-        $libre = $bloq = $ocup = 0;
-        $agenda = new Agenda($desde, min($hasta, Agenda::sumarDias($desde, 61)));
-        $medicos = Doctor::all();
-        for ($i = 0; $i < min($dias, 62); $i++) {
-            $f = Agenda::sumarDias($desde, $i);
-            foreach ($medicos as $d) {
-                foreach ($agenda->espacios($d, $f) as $s) {
-                    if ($s['off']) {
-                        continue;
-                    }
-                    if ($s['state'] === 'Bloqueada') {
-                        $bloq += $s['dur'];
-                    } elseif ($s['appt']) {
-                        $ocup += $s['dur'];
-                    } else {
-                        $libre += $s['dur'];
-                    }
-                }
-            }
-        }
-
         $dep = $L->where('deposit', '>', 0);
-        $porPaciente = $act->groupBy('patient_id')->map(fn ($g) => ['l' => $g->first()->patient->name, 'v' => $g->count()])->sortByDesc('v')->take(5)->values();
         $hc = $act->where('status', '!=', 'Cancelada')->countBy('hc_status');
 
         return Inertia::render('Reportes', [
@@ -90,15 +52,12 @@ class ReportesController extends Controller
             'porMedico' => $agrupar('doctor_id', fn ($a) => $a->doctor->name),
             'porEspecialidad' => $agrupar('specialty_id', fn ($a) => $a->specialty->name),
             'porEstado' => $porEstado->map(fn ($v, $k) => ['l' => $k, 'v' => $v])->values(),
-            'ocupacion' => $ocupacion,
-            'horas' => ['ocupadas' => round($ocup / 60), 'libres' => round($libre / 60), 'bloqueadas' => round($bloq / 60)],
             'anticipos' => [
                 'cobrados' => $dep->where('refunded', false)->sum('paid'),
                 'pendientes' => $dep->filter->isActive()->sum(fn ($a) => max(0, $a->deposit - $a->paid)),
                 'reembolsados' => $dep->where('refunded', true)->sum('paid'),
             ],
             'historias' => collect(Catalogo::ESTADOS_HC)->map(fn ($k) => ['l' => $k, 'v' => $hc[$k] ?? 0]),
-            'topPacientes' => $porPaciente,
         ]);
     }
 

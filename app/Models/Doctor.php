@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Trazable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Doctor extends Model
 {
+    use Trazable;
+
     protected $attributes = ['active' => true];
 
     protected $fillable = ['legacy_id', 'name', 'specialty_id', 'phone', 'resource_id', 'cost', 'duration', 'deposit_mode', 'deposit_value', 'days', 'start_time', 'end_time', 'notes', 'active'];

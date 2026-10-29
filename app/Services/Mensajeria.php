@@ -8,6 +8,7 @@ use App\Models\ReminderRule;
 use App\Models\Setting;
 use App\Support\Catalogo;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -93,8 +94,36 @@ class Mensajeria
 
             return;
         }
-        // Driver "log": simulación hasta definir el proveedor de WhatsApp Business / SMS.
+        if ($msg->channel === 'SMS' && $driver === 'twilio') {
+            self::smsTwilio($msg, $a);
+
+            return;
+        }
+        // Driver "log": simulación hasta definir el proveedor de WhatsApp Business.
         Log::info("[{$msg->channel}] a {$a->patient->phone}: ".$msg->body);
+        $msg->update(['status' => 'Entregado']);
+    }
+
+    /** Envía el SMS con la API REST de Twilio; cualquier fallo queda en el mensaje como Error. */
+    private static function smsTwilio(PatientMessage $msg, Appointment $a): void
+    {
+        $cfg = config('services.twilio');
+        if (! $cfg['sid'] || ! $cfg['token'] || ! $cfg['from']) {
+            throw new \RuntimeException('SMS sin configurar: faltan TWILIO_SID, TWILIO_TOKEN o TWILIO_FROM en .env.');
+        }
+        $digitos = preg_replace('/\D/', '', (string) $a->patient->phone);
+        if (strlen($digitos) !== 10) {
+            throw new \RuntimeException('El paciente no tiene un teléfono de 10 dígitos.');
+        }
+
+        $r = Http::asForm()->withBasicAuth($cfg['sid'], $cfg['token'])->timeout(15)
+            ->post("https://api.twilio.com/2010-04-01/Accounts/{$cfg['sid']}/Messages.json", [
+                'To' => $cfg['lada'].$digitos, 'From' => $cfg['from'], 'Body' => $msg->body,
+            ]);
+        if ($r->failed()) {
+            throw new \RuntimeException('Twilio: '.($r->json('message') ?? 'error HTTP '.$r->status()));
+        }
+        // Twilio acepta el mensaje en cola; se marca entregado al proveedor.
         $msg->update(['status' => 'Entregado']);
     }
 
