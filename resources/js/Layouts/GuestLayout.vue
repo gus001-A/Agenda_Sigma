@@ -40,7 +40,7 @@ const destacados = [
 </template>
 
 <style scoped>
-.au { display: grid; grid-template-columns: 1.15fr 1fr; min-height: 100vh; background: #fff; }
+.au { display: grid; grid-template-columns: 1.05fr 1.15fr; min-height: 100vh; background: #fff; }
 .au-brand { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 56px 64px;
     background: linear-gradient(155deg, var(--navy-700) 0%, var(--navy) 48%, var(--teal-700) 100%); color: #fff; }
 .au-brand::after { content: ''; position: absolute; top: -14%; right: -190px; width: 320px; height: 128%; background: #fff; border-radius: 50%; z-index: 1; }
@@ -62,7 +62,7 @@ const destacados = [
 .au-feats small { color: rgba(255, 255, 255, 0.72); font-size: 13px; }
 .au-foot { margin-top: 36px; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
 .au-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
-.au-card { position: relative; width: 100%; max-width: 410px; display: grid; gap: 16px; padding: 30px 30px 28px; background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-md); animation: s-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.au-card { position: relative; width: 100%; max-width: 760px; display: grid; gap: 16px; padding: 30px 30px 28px; background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-md); animation: s-fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .au-card__bar { position: absolute; top: 0; left: 30px; right: 30px; height: 4px; border-radius: 0 0 4px 4px; background: var(--grad); }
 @media (max-width: 900px) {
     .au { grid-template-columns: 1fr; }
@@ -71,5 +71,6 @@ const destacados = [
     .au-feats, .au-foot, .au-dots { display: none; }
     .au-sub { font-size: 15px; } .au-sub span { font-size: 18px; }
     .au-side { margin-top: -50px; position: relative; z-index: 3; padding: 0 16px 32px; align-items: flex-start; }
+    .au-card { max-width: 100%; }
 }
 </style>

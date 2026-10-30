@@ -28,7 +28,9 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Usuarios de demostración para entrar con un clic. Solo en entorno local
-     * y solo los que existen (los crea DatabaseSeeder con contraseña demo1234).
+     * y solo los que existen y están activos.
+     *
+     * IMPORTANTE: el email y la contraseña deben coincidir con el seeder.
      */
     private function accesosDemo(): array
     {
@@ -36,17 +38,48 @@ class AuthenticatedSessionController extends Controller
             return [];
         }
 
+        // Cada acceso incluye email y password reales (coinciden con UsuariosDemoSeeder)
         $accesos = [
-            ['rol' => 'Administración', 'email' => 'cortiz@clinicasanantonio.mx', 'icono' => 'pi pi-cog', 'color' => 'var(--navy)'],
-            ['rol' => 'Coordinación', 'email' => 'mfuentes@clinicasanantonio.mx', 'icono' => 'pi pi-sitemap', 'color' => 'var(--teal)'],
-            ['rol' => 'Recepción', 'email' => 'atorres@clinicasanantonio.mx', 'icono' => 'pi pi-id-card', 'color' => 'var(--accent)'],
-            ['rol' => 'Médico', 'email' => 'medico1@clinicasanantonio.mx', 'icono' => 'pi pi-heart', 'color' => 'var(--danger)'],
-            ['rol' => 'Consulta', 'email' => 'contraloria@clinicasanantonio.mx', 'icono' => 'pi pi-eye', 'color' => 'var(--navy-500)'],
+            [
+                'rol'      => 'Administración',
+                'email'    => 'admin@clinicasanantonio.mx',
+                'password' => 'Admin123!',
+                'icono'    => 'pi pi-cog',
+                'color'    => 'var(--navy)',
+            ],
+            [
+                'rol'      => 'Médico',
+                'email'    => 'doctor@clinicasanantonio.mx',
+                'password' => 'Doctor123!',
+                'icono'    => 'pi pi-heart',
+                'color'    => 'var(--danger)',
+            ],
+            [
+                'rol'      => 'Paciente',
+                'email'    => 'paciente@clinicasanantonio.mx',
+                'password' => 'Paciente123!',
+                'icono'    => 'pi pi-user',
+                'color'    => 'var(--teal)',
+            ],
+            [
+                'rol'      => 'Recepción',
+                'email'    => 'recepcion@clinicasanantonio.mx',
+                'password' => 'Recepcion123!',
+                'icono'    => 'pi pi-id-card',
+                'color'    => 'var(--accent)',
+            ],
         ];
-        $existentes = User::whereIn('email', array_column($accesos, 'email'))->where('active', true)->pluck('email')->all();
 
-        return collect($accesos)->whereIn('email', $existentes)
-            ->map(fn ($a) => $a + ['password' => 'demo1234'])->values()->all();
+        // Solo mostrar los que realmente existen y están activos
+        $existentes = User::whereIn('email', array_column($accesos, 'email'))
+            ->where('active', true)
+            ->pluck('email')
+            ->all();
+
+        return collect($accesos)
+            ->whereIn('email', $existentes)
+            ->values()
+            ->all();
     }
 
     /**
