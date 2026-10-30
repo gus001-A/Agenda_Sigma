@@ -24,6 +24,15 @@ Recordatorios automáticos (72 h / 24 h / día de la cita), cada hora:
 php artisan schedule:work      # en producción: cron con "php artisan schedule:run"
 ```
 
+## Publicar en el hosting (https://ric.sistema-sicad.site/agenda/)
+
+```bash
+ADMIN_PASSWORD='una-contraseña-segura' deploy/empaquetar.sh instalar   # primera vez
+deploy/empaquetar.sh actualizar                                        # cambios posteriores
+```
+
+Pasos para subirlo, Cron de recordatorios y correo: [`deploy/LEEME.md`](deploy/LEEME.md).
+
 ## Usuarios de demostración (contraseña `demo1234`)
 
 | Rol | Correo |

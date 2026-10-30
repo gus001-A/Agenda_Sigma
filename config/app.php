@@ -17,6 +17,9 @@ return [
 
     'clinica' => env('APP_CLINICA', 'Clínica San Antonio'),
 
+    // Botones de entrada rápida en el login con los usuarios de demostración (null = solo en local).
+    'accesos_demo' => env('ACCESOS_DEMO'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

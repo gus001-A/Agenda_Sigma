@@ -27,12 +27,13 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Usuarios de demostración para entrar con un clic. Solo en entorno local
-     * y solo los que existen (los crea DatabaseSeeder con contraseña demo1234).
+     * Usuarios de demostración para entrar con un clic. Por defecto solo en entorno
+     * local (ACCESOS_DEMO los fuerza) y solo los que existen (los crea DatabaseSeeder
+     * con contraseña demo1234).
      */
     private function accesosDemo(): array
     {
-        if (! app()->isLocal()) {
+        if (! (config('app.accesos_demo') ?? app()->isLocal())) {
             return [];
         }
 

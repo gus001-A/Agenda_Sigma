@@ -25,7 +25,7 @@ const c = computed(() => props.cita);
 const soloLectura = computed(() => !c.value.editable);
 const seccion = computed(() => props.secciones[Math.min(paso.value, props.secciones.length - 1)]);
 
-const url = (accion) => `/p/${props.token}/${accion}`;
+const url = (accion) => `${route('portal.show', props.token)}/${accion}`;
 async function post(accion, body = {}) {
     ocupado.value = true;
     try { return (await axios.post(url(accion), body)).data; }

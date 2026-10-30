@@ -39,7 +39,7 @@ const entrarComo = (a) => {
             <Button type="submit" label="Entrar" icon="pi pi-sign-in" :loading="form.processing" fluid />
         </form>
         <section v-if="accesosDemo.length" class="demo">
-            <p class="demo__t"><i class="pi pi-bolt" />Accesos de demostración (solo desarrollo)</p>
+            <p class="demo__t"><i class="pi pi-bolt" />Accesos de demostración</p>
             <div class="demo__grid">
                 <button v-for="a in accesosDemo" :key="a.email" type="button" class="demo__btn" :disabled="form.processing" :title="`Entrar como ${a.email}`" @click="entrarComo(a)">
                     <span class="demo__ic" :style="{ background: a.color }"><i :class="a.icono" /></span>
